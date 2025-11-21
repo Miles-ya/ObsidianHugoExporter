@@ -1,75 +1,75 @@
-# Obsidian Sample Plugin
+# Obsidian 示例插件
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+这是 Obsidian (https://obsidian.md) 的一个示例插件。
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+该项目使用 TypeScript 提供类型检查和文档。
+该仓库依赖于最新插件 API (obsidian.d.ts) 的 TypeScript 定义格式，其中包含描述其功能的 TSDoc 注释。
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+这个示例插件演示了插件 API 可以实现的一些基本功能。
+- 添加一个功能区图标，单击时会显示一个通知。
+- 添加一个命令“打开示例模态框”，该命令会打开一个模态框。
+- 在设置页面添加一个插件设置选项卡。
+- 注册一个全局单击事件，并将“click”输出到控制台。
+- 注册一个全局间隔，该间隔会将“setInterval”记录到控制台。
 
-## First time developing plugins?
+## 第一次开发插件？
 
-Quick starting guide for new plugin devs:
+新插件开发人员的快速入门指南：
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+- 检查是否[已经有人为您想要的功能开发了插件](https://obsidian.md/plugins)！可能有一个现有的插件足够相似，您可以与之合作。
+- 使用“Use this template”按钮（如果看不到，请登录 GitHub）将此仓库复制为模板。
+- 将您的仓库克隆到本地开发文件夹。为方便起见，您可以将此文件夹放在您的 `.obsidian/plugins/your-plugin-name` 文件夹中。
+- 安装 NodeJS，然后在您的仓库文件夹下的命令行中运行 `npm i`。
+- 运行 `npm run dev` 将您的插件从 `main.ts` 编译为 `main.js`。
+- 对 `main.ts` 进行更改（或创建新的 `.ts` 文件）。这些更改应自动编译到 `main.js` 中。
+- 重新加载 Obsidian 以加载您的插件的新版本。
+- 在设置窗口中启用插件。
+- 要更新 Obsidian API，请在您的仓库文件夹下的命令行中运行 `npm update`。
 
-## Releasing new releases
+## 发布新版本
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+- 使用您的新版本号（例如 `1.0.1`）和最新版本所需的最低 Obsidian 版本更新您的 `manifest.json`。
+- 使用 `"new-plugin-version": "minimum-obsidian-version"` 更新您的 `versions.json` 文件，以便旧版本的 Obsidian 可以下载与您的插件兼容的旧版本。
+- 使用您的新版本号作为“标签版本”创建新的 GitHub 版本。请使用确切的版本号，不要包含前缀 `v`。有关示例，请参见此处：https://github.com/obsidianmd/obsidian-sample-plugin/releases
+- 上传 `manifest.json`、`main.js`、`styles.css` 文件作为二进制附件。注意：manifest.json 文件必须在两个地方，首先是您存储库的根路径，其次是在版本中。
+- 发布版本。
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+> 您可以通过在 `manifest.json` 中手动更新 `minAppVersion` 后运行 `npm version patch`、`npm version minor` 或 `npm version major` 来简化版本升级过程。
+> 该命令将升级 `manifest.json` 和 `package.json` 中的版本，并将新版本的条目添加到 `versions.json`
 
-## Adding your plugin to the community plugin list
+## 将您的插件添加到社区插件列表
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+- 查看[插件指南](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)。
+- 发布初始版本。
+- 确保您的仓库根目录中有一个 `README.md` 文件。
+- 在 https://github.com/obsidianmd/obsidian-releases 上创建一个拉取请求以添加您的插件。
 
-## How to use
+## 如何使用
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+- 克隆此仓库。
+- 确保您的 NodeJS 版本至少为 v16 (`node --version`)。
+- 运行 `npm i` 或 `yarn` 安装依赖项。
+- 运行 `npm run dev` 以在监视模式下开始编译。
 
-## Manually installing the plugin
+## 手动安装插件
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- 将 `main.js`、`styles.css`、`manifest.json` 复制到您的保险库 `VaultFolder/.obsidian/plugins/your-plugin-id/`。
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
+## 使用 eslint 提高代码质量（可选）
+- [ESLint](https://eslint.org/) 是一个分析您的代码以快速发现问题的工具。您可以对您的插件运行 ESLint 以发现常见的错误和改进代码的方法。
+- 要在此项目中使用 eslint，请确保从终端安装 eslint：
   - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
+- 要使用 eslint 分析此项目，请使用以下命令：
   - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
+  - 然后 eslint 将创建一份报告，其中包含按文件和行号改进代码的建议。
+- 如果您的源代码位于文件夹中，例如 `src`，您可以使用此命令使用 eslint 分析该文件夹中的所有文件：
   - `eslint ./src/`
 
-## Funding URL
+## 资金链接
 
-You can include funding URLs where people who use your plugin can financially support it.
+您可以包含资金链接，使用您插件的人可以通过这些链接为您提供资金支持。
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+简单的方法是在您的 `manifest.json` 文件中将 `fundingUrl` 字段设置为您的链接：
 
 ```json
 {
@@ -77,7 +77,7 @@ The simple way is to set the `fundingUrl` field to your link in your `manifest.j
 }
 ```
 
-If you have multiple URLs, you can also do:
+如果您有多个 URL，您也可以这样做：
 
 ```json
 {
@@ -89,6 +89,6 @@ If you have multiple URLs, you can also do:
 }
 ```
 
-## API Documentation
+## API 文档
 
-See https://github.com/obsidianmd/obsidian-api
+请参阅 https://github.com/obsidianmd/obsidian-api

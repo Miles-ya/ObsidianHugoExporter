@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "ObsidianHugoExporter",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "A plugin to sync content from Obsidian to a local Hugo site.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
