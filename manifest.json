@@ -5,6 +5,6 @@
 	"minAppVersion": "0.15.0",
 	"description": "A plugin to sync content from Obsidian to a local Hugo site.",
 	"author": "Miles-ya",
-	"authorUrl": "https://github.com/Miles-ya/obsidian2hugo",
+	"authorUrl": "https://github.com/Miles-ya/ObsidianHugoExporter",
 	"isDesktopOnly": true
 }
