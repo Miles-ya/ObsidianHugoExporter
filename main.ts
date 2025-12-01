@@ -1,7 +1,8 @@
 // 从 'obsidian' 模块导入所有需要的类和类型，这些是开发插件的基础
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile ,moment} from 'obsidian';
 import * as fs from 'fs/promises'
 import * as path from 'path';
+import * as yaml from 'js-yaml';
 import {indexOf} from "builtin-modules";
 
 // 定义插件设置的接口（Interface）
@@ -109,23 +110,65 @@ export default class ObsidianHugoExporter extends Plugin {
 	}
 
 	async exportCurrentFile(){
-		if (!this.settings['hugoPath']) {
+		if (!this.settings.hugoPath) {
+			new Notice('请先在插件设置中配置 Hugo 路径');
 			return;
 		}
 
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
+			new Notice('没有活动的笔记文件');
 			return;
 		}
 
 		const fileContent = await this.app.vault.read(activeFile);
 
-		const destinationDir = path.join(this.settings.hugoPath, 'content', 'posts',activeFile.basename);
+		//调用ymal处理函数
+		const processedContent = await this.processMarkdownForHugo(fileContent, activeFile);
+
+		if (!processedContent) {
+			return;
+		}
+
+		const destinationDir = path.join(this.settings.hugoPath,this.settings.contentPath,activeFile.basename);
 		const destinationPath = path.join(destinationDir, 'index.md');
 		console.log(activeFile.name);
 		await fs.mkdir(destinationDir, { recursive: true });
 		new Notice(`${activeFile.name} 同步成功`);
-		await fs.writeFile(destinationPath, fileContent, 'utf-8');
+		await fs.writeFile(destinationPath, processedContent, 'utf-8');
+	}
+
+	async processMarkdownForHugo(rawContent: string, activeFile: TFile): Promise<string | null> {
+
+		const frontmatterRegex = /^---\s*[\r\n]+([\s\S]*?)[\r\n]+---\s*[\r\n]/;
+		const match = rawContent.match(frontmatterRegex);
+
+		let frontmatter: any = {};
+		let markdownContent = rawContent;
+
+		if (match) {
+			const ymalString = match[1];
+			try {
+				frontmatter = yaml.load(ymalString)||{};
+			} catch (e){
+				new Notice('YAML Frontmatter 格式错误，无法解析。');
+				console.error('YAML parsing error:', e);
+				return null;
+			}
+			markdownContent = rawContent.substring(match[0].length);
+		}
+
+		const hugoDefaults = {
+			title: activeFile.basename,
+			date: moment().format(),
+			draft: false
+		}
+
+		const finalFrontmatter = { ...hugoDefaults, ...frontmatter };
+		const finalYamlString = yaml.dump(finalFrontmatter);
+		const finalContent = `---\n${finalYamlString}---\n\n${markdownContent}`;
+
+		return finalContent;
 	}
 
 
