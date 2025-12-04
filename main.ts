@@ -44,71 +44,9 @@ export default class ObsidianHugoExporter extends Plugin {
 		// 为插件添加一个设置页面（Tab）
 		this.addSettingTab(new ObsidianHugoExporterSettingTab(this.app, this));
 
-
-
-
-
-		// // 在 Obsidian 窗口底部的状态栏添加一个新的项目
-		// // 注意：这个功能在移动端 App 上不生效
-		// const statusBarItemEl = this.addStatusBarItem();
-		// statusBarItemEl.setText('状态栏文本'); // 设置状态栏项目显示的文本
-
-		// // 添加一个命令到命令面板 (通过 Ctrl/Cmd + P 打开)
-		// // 这是一个简单的命令
-		// this.addCommand({
-		// 	id: 'open-sample-modal-simple', // 命令的唯一ID
-		// 	name: '打开示例模态框（简单）', // 命令在命令面板中显示的名字
-		// 	callback: () => {
-		// 		// 命令被触发时执行的回调函数
-		// 		new SampleModal(this.app).open(); // 创建并打开一个新的模态框
-		// 	}
-		// });
-
-		// // 添加一个“编辑器命令”，这种命令通常需要和编辑器交互
-		// this.addCommand({
-		// 	id: 'sample-editor-command', // 命令的唯一ID
-		// 	name: '示例编辑器命令', // 命令的名字
-		// 	// editorCallback 只在用户正在编辑一个 Markdown 文件时才有效
-		// 	editorCallback: (editor: Editor, _view: MarkdownView) => {
-		// 		console.log(editor.getSelection()); // 在控制台打印当前选中的文本
-		// 		editor.replaceSelection('示例编辑器命令'); // 将当前选中的文本替换为指定内容
-		// 	}
-		// });
-
-		// // 添加一个更复杂的命令，它包含一个检查条件
-		// this.addCommand({
-		// 	id: 'open-sample-modal-complex', // 命令的唯一ID
-		// 	name: '打开示例模态框（复杂）', // 命令的名字
-		// 	// checkCallback 会在决定是否执行命令前回被调用
-		// 	checkCallback: (checking: boolean) => {
-		// 		// 检查当前是否有活跃的 Markdown 视图
-		// 		const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-		// 		if (markdownView) {
-		// 			// 如果 `checking` 是 true, 表示 Obsidian 只是在检查这个命令当前是否可用
-		// 			// 这种情况下，我们不应该执行任何操作，只返回 true 或 false
-		// 			if (!checking) {
-		// 				new SampleModal(this.app).open();
-		// 			}
-		//
-		// 			// 返回 true 表示该命令当前可用，它会显示在命令面板中
-		// 			return true;
-		// 		}
-		// 		// 如果没有活跃的 Markdown 视图，返回 false，命令将不会显示
-		// 		return false;
-		// 	}
-		// });
-
-		// // 注册一个全局的 DOM 事件监听器
-		// // 这个方法的好处是，当插件被禁用时，Obsidian 会自动帮你移除这个监听器，防止内存泄漏
-		// this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-		// 	console.log('click', evt); // 每次点击 document 时，在控制台打印事件对象
-		// });
-
-		// // 注册一个定时器
-		// // 和 registerDomEvent 类似，这个定时器会在插件禁用时自动被清除
-		// this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000)); // 每5分钟在控制台打印一次 'setInterval'
 	}
 
+	//总
 	async exportCurrentFile(){
 		if (!this.settings.hugoPath) {
 			new Notice('请先在插件设置中配置 Hugo 路径');
@@ -123,7 +61,7 @@ export default class ObsidianHugoExporter extends Plugin {
 
 		const fileContent = await this.app.vault.read(activeFile);
 
-		//调用ymal处理函数
+		//调用md格式处理函数，包括两个部分，一个是处理YAML元数据，一个是处理链接格式
 		const processedContent = await this.processMarkdownForHugo(fileContent, activeFile);
 
 		if (!processedContent) {
@@ -138,14 +76,25 @@ export default class ObsidianHugoExporter extends Plugin {
 		await fs.writeFile(destinationPath, processedContent, 'utf-8');
 	}
 
+	/**
+ * 处理Markdown内容以适配Hugo格式要求
+ * 该函数会解析并处理YAML前置元数据，并确保包含Hugo必需的默认字段
+ *
+ * @param rawContent - 原始的Markdown文件内容字符串
+ * @param activeFile - 当前处理的文件对象，用于获取文件基本信息
+ * @returns 处理后的符合Hugo格式的Markdown内容字符串，如果处理失败则返回null
+ */
 	async processMarkdownForHugo(rawContent: string, activeFile: TFile): Promise<string | null> {
 
+		/* ---------- YMAL处理 ---------- */
+		// 使用正则表达式匹配YAML前置元数据部分
 		const frontmatterRegex = /^---\s*[\r\n]+([\s\S]*?)[\r\n]+---\s*[\r\n]/;
 		const match = rawContent.match(frontmatterRegex);
 
 		let frontmatter: any = {};
 		let markdownContent = rawContent;
 
+		// 如果找到前置元数据，则解析YAML内容
 		if (match) {
 			const ymalString = match[1];
 			try {
@@ -155,15 +104,29 @@ export default class ObsidianHugoExporter extends Plugin {
 				console.error('YAML parsing error:', e);
 				return null;
 			}
+			// 提取去除前置元数据后的Markdown正文内容
 			markdownContent = rawContent.substring(match[0].length);
 		}
 
+		// 定义Hugo必需的默认字段配置
 		const hugoDefaults = {
 			title: activeFile.basename,
 			date: moment().format(),
 			draft: false
 		}
 
+
+		/* ---------- 正文链接处理 ---------- */
+		markdownContent = markdownContent.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, linkTarget, alias) =>{
+
+			const displayText = alias || linkTarget;
+			// const encodedLinkTarget = encodeURI(linkTarget);
+			return `[${displayText}](${linkTarget})`;
+		});
+
+
+		/* ---------- 合并处理 ---------- */
+		// 合并默认配置与用户自定义的前置元数据
 		const finalFrontmatter = { ...hugoDefaults, ...frontmatter };
 		const finalYamlString = yaml.dump(finalFrontmatter);
 		const finalContent = `---\n${finalYamlString}---\n\n${markdownContent}`;
@@ -173,27 +136,17 @@ export default class ObsidianHugoExporter extends Plugin {
 
 
 
-	/**
-     * 这是插件生命周期的另一部分，当插件被禁用时，这个方法会自动执行。
-     * 所有清理工作的代码都应该放在这里，比如移除添加的元素、清除定时器等。
-	 * （Obsidian 会自动处理通过 this.add... 和 this.register... 添加的内容）
-     */
+
 	onunload() {
 		// 这个方法是可选的，如果你的插件在 onload 中手动创建了一些需要清理的东西，可以在这里处理
 	}
 
-    /**
-     * 异步方法，用于加载插件的设置
-     */
 	async loadSettings() {
 		// this.loadData() 会异步加载 data.json 文件
 		// Object.assign 用于合并对象，这里用默认设置来填充加载后不存在的设置项
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
-    /**
-     * 异步方法，用于保存插件的设置
-     */
 	async saveSettings() {
 		// this.saveData() 会将传入的对象（这里是 this.settings）保存到 data.json 文件
 		await this.saveData(this.settings);
