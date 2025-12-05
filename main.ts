@@ -1,4 +1,3 @@
-// 从 'obsidian' 模块导入所有需要的类和类型，这些是开发插件的基础
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile ,moment} from 'obsidian';
 import * as fs from 'fs/promises'
 import * as path from 'path';
@@ -72,18 +71,14 @@ export default class ObsidianHugoExporter extends Plugin {
 		const destinationPath = path.join(destinationDir, 'index.md');
 		console.log(activeFile.name);
 		await fs.mkdir(destinationDir, { recursive: true });
-		new Notice(`${activeFile.name} 同步成功`);
-		await fs.writeFile(destinationPath, processedContent, 'utf-8');
-	}
 
-	/**
- * 处理Markdown内容以适配Hugo格式要求
- * 该函数会解析并处理YAML前置元数据，并确保包含Hugo必需的默认字段
- *
- * @param rawContent - 原始的Markdown文件内容字符串
- * @param activeFile - 当前处理的文件对象，用于获取文件基本信息
- * @returns 处理后的符合Hugo格式的Markdown内容字符串，如果处理失败则返回null
- */
+		await fs.writeFile(destinationPath, processedContent, 'utf-8');
+
+		//图片复制
+		this.copyImages(activeFile,destinationDir );
+		new Notice(`${activeFile.name} 同步成功`);
+
+	}
 	async processMarkdownForHugo(rawContent: string, activeFile: TFile): Promise<string | null> {
 
 		/* ---------- YMAL处理 ---------- */
@@ -115,7 +110,6 @@ export default class ObsidianHugoExporter extends Plugin {
 			draft: false
 		}
 
-
 		/* ---------- 正文链接处理 ---------- */
 		markdownContent = markdownContent.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, linkTarget, alias) =>{
 
@@ -134,8 +128,40 @@ export default class ObsidianHugoExporter extends Plugin {
 		return finalContent;
 	}
 
+async copyImages(activeFile: TFile, destinationDir: string) {
+    const fileCache = this.app.metadataCache.getFileCache(activeFile);
+    if (!fileCache?.embeds) {
+        return;
+    }
 
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'];
 
+    const imageEmbeds = fileCache.embeds.filter(embed => {
+        // 【新增】安全检查：确保 embed.link 是一个非空字符串
+        if (typeof embed.link !== 'string' || !embed.link) {
+            return false;
+        }
+        const extension = path.extname(embed.link).toLowerCase();
+        return imageExtensions.includes(extension);
+    });
+
+    for (const embed of imageEmbeds) {
+        const imageFile = this.app.metadataCache.getFirstLinkpathDest(embed.link, activeFile.path);
+        if (imageFile instanceof TFile) {
+            try {
+                const imageBinary = await this.app.vault.readBinary(imageFile);
+                const destImagePath = path.join(destinationDir, imageFile.name);
+                await fs.writeFile(destImagePath, Buffer.from(imageBinary));
+            } catch (e) {
+                new Notice(`图片复制失败: ${imageFile.name}`);
+                console.error(`Error copying image ${imageFile.name}:`, e);
+            }
+        } else {
+            new Notice(`图片文件未找到: ${embed.link}`);
+			console.warn(`Image file not found for link: ${embed.link} in ${activeFile.path}`);
+        }
+    }
+}
 
 	onunload() {
 		// 这个方法是可选的，如果你的插件在 onload 中手动创建了一些需要清理的东西，可以在这里处理
