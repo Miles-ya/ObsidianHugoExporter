@@ -3,6 +3,9 @@ import * as fs from 'fs/promises'
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 
+// 为图片格式定义一个可复用的常量
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'];
+
 // 定义插件设置的接口（Interface）
 interface ObsidianHugoExporterSettings {
 	hugoPath: string;
@@ -35,7 +38,7 @@ export default class ObsidianHugoExporter extends Plugin {
 		await this.loadSettings();
 
 		// 在 Obsidian 左侧边栏添加一个 Ribbon 图标（快捷按钮）
-		const ribbonIconEl = this.addRibbonIcon('send', '发布到hugo', (_evt: MouseEvent) => {
+		this.addRibbonIcon('send', '发布到hugo', (_evt: MouseEvent) => {
 			this.exportCurrentFile();
 		});
 
@@ -87,68 +90,71 @@ export default class ObsidianHugoExporter extends Plugin {
 	}
 	async processMarkdownForHugo(rawContent: string, activeFile: TFile): Promise<string | null> {
 
-		/* ---------- YMAL处理 ---------- */
-		// 使用正则表达式匹配YAML前置元数据部分
-		const frontmatterRegex = /^---\s*[\r\n]+([\s\S]*?)[\r\n]+---\s*[\r\n]/;
-		const match = rawContent.match(frontmatterRegex);
+		/* ---------- YAML处理 (已优化) ---------- */
+		// 使用 Obsidian API 获取元数据，比正则表达式更稳定
+		const fileCache = this.app.metadataCache.getFileCache(activeFile);
+		
+		// 'frontmatter' 可能为 undefined，所以提供一个空对象作为默认值
+		// 使用解构赋值来安全地排除 Obsidian API 注入的 'position' 属性
+		const { position, ...userFrontmatter } = fileCache?.frontmatter || {};
 
-		let frontmatter: any = {};
+		// 基于元数据的位置信息，精确地分离出 Markdown 正文
 		let markdownContent = rawContent;
-
-		// 如果找到前置元数据，则解析YAML内容
-		if (match) {
-			const ymalString = match[1];
-			try {
-				frontmatter = yaml.load(ymalString)||{};
-			} catch (e){
-				new Notice('YAML Frontmatter 格式错误，无法解析。');
-				console.error('YAML parsing error:', e);
-				return null;
-			}
-			// 提取去除前置元数据后的Markdown正文内容
-			markdownContent = rawContent.substring(match[0].length);
+		const frontmatterEndOffset = fileCache?.frontmatterPosition?.end.offset;
+		if (frontmatterEndOffset) {
+			// 从元数据块结束后开始截取，并移除前导空格/换行
+			markdownContent = rawContent.substring(frontmatterEndOffset).trim();
 		}
 
-		// 定义Hugo必需的默认字段配置
+		// 定义Hugo必需的默认字段配置 (已优化日期逻辑)
 		const hugoDefaults = {
 			title: activeFile.basename,
-			date: moment().format(),
+			// 优先使用笔记元数据中的日期，其次是文件修改日期
+			date: userFrontmatter.date ? moment(userFrontmatter.date).format() : moment(activeFile.stat.mtime).format(),
 			draft: false
-		}
+		};
 
-		/* ---------- 正文链接处理 ---------- */
-		//转换图片链接
-		markdownContent = markdownContent.replace(/!\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, linkTarget, alias) => {
-			const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'];
-			const extension = path.extname(linkTarget).toLowerCase();
-
-			if (imageExtensions.includes(extension)) {
-				const altText = alias || '';
-				const imageName = path.basename(linkTarget);
-				const encodedImageName = encodeURI(imageName);
-				return `![${altText}](${encodedImageName})`;
+		/* ---------- 正文链接处理 (已整合) ---------- */
+		// 转换Obsidian的 [[WikiLink]] 和 ![[AttachmentLink]] 为Hugo兼容的Markdown链接
+		markdownContent = markdownContent.replace(/!?\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, linkTarget, alias) => {
+			// 处理图片链接 `![[...]]`
+			if (match.startsWith('!')) {
+				const extension = path.extname(linkTarget).toLowerCase();
+				if (IMAGE_EXTENSIONS.includes(extension)) {
+					const altText = alias || '';
+					const imageName = path.basename(linkTarget);
+					// 对图片文件名进行URL编码，避免特殊字符问题
+					const encodedImageName = encodeURI(imageName);
+					return `![${altText}](${encodedImageName})`;
+				}
 			}
+			// 处理普通内部链接 `[[...]]`
+			else {
+				const displayText = alias || linkTarget;
+				// 将链接目标转换为URL友好的slug格式
+				// 注意：这个slugify函数比较基础，可能无法完美处理非ASCII字符。
+				const slug = linkTarget
+					.toLowerCase()
+					.trim()
+					// 移除非字母、数字、空格和连字符的字符
+					.replace(/[^\w\s-]/g, '')
+					// 将多个空格或连字符替换为单个连字符
+					.replace(/[\s_-]+/g, '-')
+					// 移除开头和结尾的连字符
+					.replace(/^-+|-+$/g, '');
+
+				// 生成Hugo期望的相对链接格式, 指向另一个Page Bundle
+				return `[${displayText}](../${slug}/)`;
+			}
+			// 如果不是预期的链接格式（例如，带不支持扩展名的附件），保持原样
 			return match;
-		});
-
-		markdownContent = markdownContent.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, linkTarget, alias) =>{
-
-			const displayText = alias || linkTarget;
-			// Slugify the link target to make it URL-friendly.
-			const slug = linkTarget
-				.toLowerCase()
-				.trim()
-				.replace(/[^\w\s-]/g, '')
-				.replace(/[\s_-]+/g, '-')
-				.replace(/^-+|-+$/g, '');
-
-			return `[${displayText}](../${slug}/)`;
 		});
 
 
 		/* ---------- 合并处理 ---------- */
-		// 合并默认配置与用户自定义的前置元数据
-		const finalFrontmatter = { ...hugoDefaults, ...frontmatter };
+		// 合并默认配置与用户自定义的前置元数据，用户自定义的会覆盖默认值
+		const finalFrontmatter = { ...hugoDefaults, ...userFrontmatter };
+		// js-yaml 的 dump 行为可能会在结尾添加换行符
 		const finalYamlString = yaml.dump(finalFrontmatter);
 		const finalContent = `---\n${finalYamlString}---\n\n${markdownContent}`;
 
@@ -161,15 +167,13 @@ async copyImages(activeFile: TFile, destinationDir: string) {
         return;
     }
 
-    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'];
-
     const imageEmbeds = fileCache.embeds.filter(embed => {
         // 【新增】安全检查：确保 embed.link 是一个非空字符串
         if (typeof embed.link !== 'string' || !embed.link) {
             return false;
         }
         const extension = path.extname(embed.link).toLowerCase();
-        return imageExtensions.includes(extension);
+        return IMAGE_EXTENSIONS.includes(extension);
     });
 
     for (const embed of imageEmbeds) {
