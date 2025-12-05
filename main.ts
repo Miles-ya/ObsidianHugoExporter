@@ -1,8 +1,7 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile ,moment} from 'obsidian';
+import { App,  Modal, Notice, Plugin, PluginSettingTab, Setting, TFile ,moment} from 'obsidian';
 import * as fs from 'fs/promises'
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import {indexOf} from "builtin-modules";
 
 // 定义插件设置的接口（Interface）
 interface ObsidianHugoExporterSettings {
@@ -58,25 +57,32 @@ export default class ObsidianHugoExporter extends Plugin {
 			return;
 		}
 
-		const fileContent = await this.app.vault.read(activeFile);
+		try {
+			const fileContent = await this.app.vault.read(activeFile);
 
-		//调用md格式处理函数，包括两个部分，一个是处理YAML元数据，一个是处理链接格式
-		const processedContent = await this.processMarkdownForHugo(fileContent, activeFile);
+			//调用md格式处理函数，包括两个部分，一个是处理YAML元数据，一个是处理链接格式
+			const processedContent = await this.processMarkdownForHugo(fileContent, activeFile);
 
-		if (!processedContent) {
-			return;
+			if (!processedContent) {
+				return;
+			}
+
+			const destinationDir = path.join(this.settings.hugoPath,this.settings.contentPath,activeFile.basename);
+			const destinationPath = path.join(destinationDir, 'index.md');
+			console.log(activeFile.name);
+			await fs.mkdir(destinationDir, { recursive: true });
+
+			await fs.writeFile(destinationPath, processedContent, 'utf-8');
+
+			//图片复制
+			await this.copyImages(activeFile,destinationDir );
+			new Notice(`${activeFile.name} 同步成功`);
+		} catch (error) {
+			console.error('Hugo 导出失败:', error);
+			new Notice('导出失败，详情请查看开发者控制台。');
 		}
 
-		const destinationDir = path.join(this.settings.hugoPath,this.settings.contentPath,activeFile.basename);
-		const destinationPath = path.join(destinationDir, 'index.md');
-		console.log(activeFile.name);
-		await fs.mkdir(destinationDir, { recursive: true });
 
-		await fs.writeFile(destinationPath, processedContent, 'utf-8');
-
-		//图片复制
-		this.copyImages(activeFile,destinationDir );
-		new Notice(`${activeFile.name} 同步成功`);
 
 	}
 	async processMarkdownForHugo(rawContent: string, activeFile: TFile): Promise<string | null> {
@@ -111,11 +117,32 @@ export default class ObsidianHugoExporter extends Plugin {
 		}
 
 		/* ---------- 正文链接处理 ---------- */
+		//转换图片链接
+		markdownContent = markdownContent.replace(/!\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, linkTarget, alias) => {
+			const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'];
+			const extension = path.extname(linkTarget).toLowerCase();
+
+			if (imageExtensions.includes(extension)) {
+				const altText = alias || '';
+				const imageName = path.basename(linkTarget);
+				const encodedImageName = encodeURI(imageName);
+				return `![${altText}](${encodedImageName})`;
+			}
+			return match;
+		});
+
 		markdownContent = markdownContent.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, linkTarget, alias) =>{
 
 			const displayText = alias || linkTarget;
-			// const encodedLinkTarget = encodeURI(linkTarget);
-			return `[${displayText}](${linkTarget})`;
+			// Slugify the link target to make it URL-friendly.
+			const slug = linkTarget
+				.toLowerCase()
+				.trim()
+				.replace(/[^\w\s-]/g, '')
+				.replace(/[\s_-]+/g, '-')
+				.replace(/^-+|-+$/g, '');
+
+			return `[${displayText}](../${slug}/)`;
 		});
 
 
@@ -178,33 +205,6 @@ async copyImages(activeFile: TFile, destinationDir: string) {
 		await this.saveData(this.settings);
 	}
 }
-
-/**
- * 定义一个模态框（Modal）类，继承自 Obsidian 的 Modal 基类
- */
-class SampleModal extends Modal {
-	// 构造函数，接收一个 App 实例
-	constructor(app: App) {
-		super(app);
-	}
-
-    /**
-     * 当模态框被打开时调用的生命周期方法
-     */
-	onOpen() {
-		const {contentEl} = this; // contentEl 是模态框内容的 HTML 容器
-		contentEl.setText('哇!'); // 在模态框中显示文本
-	}
-
-    /**
-     * 当模态框被关闭时调用的生命周期方法
-     */
-	onClose() {
-		const {contentEl} = this; // 获取内容容器
-		contentEl.empty(); // 清空容器中的所有内容，防止内存泄漏
-	}
-}
-
 
 /**
  * 定义插件的设置页面（Tab）类，继承自 PluginSettingTab 基类
