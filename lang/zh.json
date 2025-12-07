@@ -1,0 +1,14 @@
+{
+    "ribbon_tool_tip": "发布到hugo",
+    "notice_hugo_path_not_set": "请先在插件设置中配置 Hugo 路径",
+    "notice_no_active_file": "没有活动的笔记文件",
+    "notice_sync_success": "{fileName} 同步成功",
+    "notice_export_fail": "导出失败，详情请查看开发者控制台。",
+    "notice_copy_image_fail": "图片复制失败: {imageName}",
+    "notice_image_not_found": "图片文件未找到: {imageLink}",
+    "setting_title": "ObsidianHugoExporter设置",
+    "setting_hugo_path_name": "Hugo 路径",
+    "setting_hugo_path_desc": "Hugo 项目的路径（注意要用左斜杠‘/’）",
+    "setting_content_path_name": "文章目录",
+    "setting_content_path_desc": "Hugo 文章目录的路径"
+}

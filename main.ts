@@ -2,6 +2,7 @@ import { App,  Modal, Notice, Plugin, PluginSettingTab, Setting, TFile ,moment} 
 import * as fs from 'fs/promises'
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import { t } from 'src/i18n';
 
 // 支持的图片文件扩展名
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'];
@@ -33,8 +34,10 @@ export default class ObsidianHugoExporter extends Plugin {
 		// 加载保存的设置
 		await this.loadSettings();
 
+		console.log(`ObsidianHugoExporter: Using language: ${moment.locale()}`);
+
 		// 添加功能区图标（Ribbon Icon）
-		this.addRibbonIcon('send', '发布到hugo', (_evt: MouseEvent) => {
+		this.addRibbonIcon('send', t('ribbon_tool_tip'), (_evt: MouseEvent) => {
 			// 点击图标时执行导出当前文件
 			this.exportCurrentFile();
 		});
@@ -56,7 +59,7 @@ export default class ObsidianHugoExporter extends Plugin {
 
 			if (!this.settings.hugoPath) {
 
-				new Notice('请先在插件设置中配置 Hugo 路径');
+				new Notice(t('notice_hugo_path_not_set'));
 
 				return;
 
@@ -69,11 +72,8 @@ export default class ObsidianHugoExporter extends Plugin {
 			const activeFile = this.app.workspace.getActiveFile();
 
 			if (!activeFile) {
-
-				new Notice('没有活动的笔记文件');
-
+				new Notice(t('notice_no_active_file'));
 				return;
-
 			}
 
 	
@@ -128,7 +128,7 @@ export default class ObsidianHugoExporter extends Plugin {
 
 				// 显示成功通知
 
-				new Notice(`${activeFile.name} 同步成功`);
+				new Notice(t('notice_sync_success').replace('{fileName}', activeFile.name));
 
 			} catch (error) {
 
@@ -136,7 +136,7 @@ export default class ObsidianHugoExporter extends Plugin {
 
 				console.error('Hugo 导出失败:', error);
 
-				new Notice('导出失败，详情请查看开发者控制台。');
+				new Notice(t('notice_export_fail'));
 
 			}
 
@@ -247,11 +247,11 @@ export default class ObsidianHugoExporter extends Plugin {
 					// 写入图片到目标路径
                 	await fs.writeFile(destImagePath, Buffer.from(imageBinary));
             	} catch (e) {
-                	new Notice(`图片复制失败: ${imageFile.name}`);
+                	new Notice(t('notice_copy_image_fail').replace('{imageName}', imageFile.name));
                 	console.error(`Error copying image ${imageFile.name}:`, e);
             	}
         	} else {
-            	new Notice(`图片文件未找到: ${embed.link}`);
+            	new Notice(t('notice_image_not_found').replace('{imageLink}', embed.link));
 				console.warn(`Image file not found for link: ${embed.link} in ${activeFile.path}`);
         	}
     	}
@@ -309,16 +309,16 @@ class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 
 		containerEl.empty(); // 清空设置面板
 
-		containerEl.createEl('h2',  { text: 'ObsidianHugoExporter设置' }); // 添加标题
+		containerEl.createEl('h2',  { text: t('setting_title') }); // 添加标题
 
 
 		// Hugo 路径设置项
 
 		new Setting(containerEl)
 
-			.setName('Hugo 路径') // 设置项名称
+			.setName(t('setting_hugo_path_name')) // 设置项名称
 
-			.setDesc('Hugo 项目的路径（注意要用左斜杠‘/’）') // 设置项描述
+			.setDesc(t('setting_hugo_path_desc')) // 设置项描述
 
 			.addText(text => text
 
@@ -341,9 +341,9 @@ class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 
-			.setName('文章目录') // 设置项名称
+			.setName(t('setting_content_path_name')) // 设置项名称
 
-			.setDesc('Hugo 文章目录的路径') // 设置项描述
+			.setDesc(t('setting_content_path_desc')) // 设置项描述
 
 			.addText(text => text
 

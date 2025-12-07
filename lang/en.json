@@ -1,0 +1,14 @@
+{
+    "ribbon_tool_tip": "Publish to Hugo",
+    "notice_hugo_path_not_set": "Please configure the Hugo path in the plugin settings first",
+    "notice_no_active_file": "No active note file",
+    "notice_sync_success": "{fileName} synced successfully",
+    "notice_export_fail": "Export failed, please check the developer console for details.",
+    "notice_copy_image_fail": "Image copy failed: {imageName}",
+    "notice_image_not_found": "Image file not found: {imageLink}",
+    "setting_title": "ObsidianHugoExporter Settings",
+    "setting_hugo_path_name": "Hugo Path",
+    "setting_hugo_path_desc": "The path to your Hugo project (use forward slashes '/')",
+    "setting_content_path_name": "Content Path",
+    "setting_content_path_desc": "The path to your Hugo content directory"
+}
