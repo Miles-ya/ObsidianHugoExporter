@@ -20,6 +20,7 @@ An Obsidian plugin to export notes to a [Hugo](https://gohugo.io/) static site g
     -   Open the plugin settings for "Obsidian Hugo Exporter".
     -   Set the **Hugo Path**: This is the absolute path to the root directory of your Hugo project.
     -   Set the **Content Path**: This is the path within your Hugo project where you want your posts to be saved. The default is `content/posts`.
+    -   **Permalink Configuration**: Additionally, ensure that in your `hugo.toml` file, you change `[permalinks] posts = "/posts/:year/:month/:title/"` to `[permalinks] posts = "/posts/:title/"`.
 3.  **Exporting**:
     -   Open the note you want to export.
     -   Click the "Publish to Hugo" (send icon) button in the left ribbon.
