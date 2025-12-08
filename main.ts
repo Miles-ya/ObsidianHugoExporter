@@ -65,8 +65,6 @@ export default class ObsidianHugoExporter extends Plugin {
 
 			}
 
-	
-
 			// 获取当前活动的文件
 
 			const activeFile = this.app.workspace.getActiveFile();
@@ -76,21 +74,13 @@ export default class ObsidianHugoExporter extends Plugin {
 				return;
 			}
 
-	
-
 			try {
 
 				// 读取文件内容
-
 				const fileContent = await this.app.vault.read(activeFile);
 
-	
-
 				// 处理Markdown内容，转换为Hugo兼容格式
-
 				const processedContent = await this.processMarkdownForHugo(fileContent, activeFile);
-
-	
 
 				if (!processedContent) {
 
@@ -135,13 +125,8 @@ export default class ObsidianHugoExporter extends Plugin {
 				// 捕获并处理导出过程中的错误
 
 				console.error('Hugo 导出失败:', error);
-
 				new Notice(t('notice_export_fail'));
-
 			}
-
-	
-
 		}
 	/**
 	 * 处理Markdown内容，使其兼容Hugo
@@ -188,14 +173,15 @@ export default class ObsidianHugoExporter extends Plugin {
 			else {
 				const displayText = alias || linkTarget; // 显示文本优先使用别名
 				// 生成slug（URL友好的字符串）
-				const slug = linkTarget
-					.toLowerCase()
-					.trim()
-					.replace(/[^\w\s-]/g, '') // 移除特殊字符
-					.replace(/[\s_-]+/g, '-') // 替换空格和下划线为连字符
-					.replace(/^-+|-+$/g, ''); // 移除开头和结尾的连字符
-
-				return `[${displayText}](../${slug}/)`; // 返回Hugo链接格式
+				// const slug = linkTarget
+				// 	.toLowerCase()
+				// 	.trim()
+				// 	.replace(/[^\w\s-]/g, '') // 移除特殊字符
+				// 	.replace(/[\s_-]+/g, '-') // 替换空格和下划线为连字符
+				// 	.replace(/^-+|-+$/g, ''); // 移除开头和结尾的连字符
+				//
+				// return `[${displayText}](../${slug}/)`; // 返回Hugo链接格式
+				return `[${displayText}](../${encodeURI(displayText)}/)`;
 			}
 			return match; // 不匹配的链接原样返回
 		});
