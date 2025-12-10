@@ -1,10 +1,10 @@
 {
-	"id": "obsidian-hugo-exporter",
+	"id": "hugo-exporter",
 	"name": "Hugo Exporter",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "An Obsidian plugin to export notes to a Hugo static site generator, designed to work with Hugo's Page Bundles structure.",
+	"description": "An plugin to export notes to a Hugo static site generator, designed to work with Hugo's Page Bundles structure.",
 	"author": "Miles-ya",
-	"authorUrl": "https://github.com/Miles-ya/ObsidianHugoExporter",
+	"authorUrl": "https://github.com/Miles-ya",
 	"isDesktopOnly": true
 }
