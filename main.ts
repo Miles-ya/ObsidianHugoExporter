@@ -38,7 +38,7 @@ export default class ObsidianHugoExporter extends Plugin {
 		// 添加功能区图标（Ribbon Icon）
 		this.addRibbonIcon('send', t('ribbon_tool_tip'), (_evt: MouseEvent) => {
 			// 点击图标时执行导出当前文件
-			this.exportCurrentFile();
+			void this.exportCurrentFile();
 		});
 
 		// 添加设置面板
@@ -105,7 +105,7 @@ export default class ObsidianHugoExporter extends Plugin {
 		const fileCache = this.app.metadataCache.getFileCache(activeFile);
 
 		// 提取用户自定义的Frontmatter，并排除 'position' 字段（显式忽略）
-		const { position: _, ...userFrontmatter } = fileCache?.frontmatter || {};
+		const { position, ...userFrontmatter } = fileCache?.frontmatter || {};
 
 		let markdownContent = rawContent;
 		const frontmatterEndOffset = fileCache?.frontmatterPosition?.end.offset;
