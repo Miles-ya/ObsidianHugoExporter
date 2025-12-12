@@ -105,7 +105,8 @@ export default class ObsidianHugoExporter extends Plugin {
 		const fileCache = this.app.metadataCache.getFileCache(activeFile);
 
 		// 提取用户自定义的Frontmatter，并排除 'position' 字段（显式忽略）
-		const { position, ...userFrontmatter } = fileCache?.frontmatter || {};
+		const userFrontmatter = { ...(fileCache?.frontmatter || {}) };
+		delete userFrontmatter.position;
 
 		let markdownContent = rawContent;
 		const frontmatterEndOffset = fileCache?.frontmatterPosition?.end.offset;
