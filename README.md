@@ -9,8 +9,11 @@ An Obsidian plugin to export notes to a [Hugo](https://gohugo.io/) static site g
 -   **One-click Export**: Export the current note to your Hugo project with a single click.
 -   **Page Bundle Structure**: Automatically creates a Page Bundle for each exported note (e.g., `content/posts/my-note/index.md`).
 -   **Frontmatter Processing**: Processes YAML frontmatter, adding required Hugo fields like `title`, `date`, and `draft` while preserving your own metadata.
--   **Link Conversion**: Converts Obsidian `[[wikilinks]]` to Hugo-friendly relative links and `![[image.png]]` embeds to standard Markdown image links.
--   **Image Handling**: Automatically copies linked images from your vault to the note's corresponding Page Bundle directory.
+-   **Link Conversion**: Converts Obsidian `[[wikilinks]]` to Hugo-friendly relative links and local image embeds to standard Markdown image links.
+-   **Image Handling**: Copies local images into the Page Bundle and gives them stable SHA-256-based names to avoid filename conflicts.
+-   **Daily Note Names**: Removes a valid leading `YYYY-MM-DD ` date from the exported directory and default title.
+-   **Word Replacements**: Applies configurable, ordered text replacement rules during export.
+-   **Conflict-safe Export**: Creates `title1`, `title2`, and so on when an export directory already exists, without overwriting old content.
 -   **Configurable Paths**: Allows you to set the path to your Hugo project and the content directory.
 
 ## How to Use
@@ -20,6 +23,7 @@ An Obsidian plugin to export notes to a [Hugo](https://gohugo.io/) static site g
     -   Open the plugin settings for "Obsidian Hugo Exporter".
     -   Set the **Hugo Path**: This is the absolute path to the root directory of your Hugo project.
     -   Set the **Content Path**: This is the path within your Hugo project where you want your posts to be saved. The default is `content/posts`.
+    -   Add any **Word Replacements** you want to apply to exported body text, titles, directory names, and string frontmatter values.
     -   **Permalink Configuration**: Additionally, ensure that in your `hugo.toml` file, you change `[permalinks] posts = "/posts/:year/:month/:title/"` to `[permalinks] posts = "/posts/:title/"`.
 3.  **Exporting**:
     -   Open the note you want to export.
@@ -32,16 +36,17 @@ When you export a file, the plugin performs the following actions:
 
 -   **Frontmatter**: It reads the note's frontmatter. It ensures `title` (defaults to the filename), `date` (defaults to the file's modification time), and `draft: false` are present. Any existing frontmatter you have (like `tags` or `categories`) is preserved.
 -   **Link Conversion**:
-    -   `[[My Other Note]]` is converted to `[My Other Note](../my-other-note/)`.
-    -   `![[my-image.png]]` is converted to `![my-image.png](my-image.png)`.
+    -   `[[My Other Note]]` is converted to `[My Other Note](../My%20Other%20Note/)`.
+    -   `![[my-image.png]]` is converted to a standard Markdown image link such as `![](a3f29c8d92e1b472.png)`.
+-   **Safe Output Names**: A note named `2025-11-23 My Note.md` exports as `My Note`. If that directory exists, the plugin creates `My Note1` and updates the exported title to match.
 -   **File Structure**: For a note named `My Awesome Note.md`, the plugin creates the following structure in your Hugo project, which is known as a Page Bundle:
     ```
     hugo-project/
     └── content/
         └── posts/
-            └── my-awesome-note/
+            └── My Awesome Note/
                 ├── index.md
-                └── my-image.png
+                └── a3f29c8d92e1b472.png
     ```
 
 ## License
