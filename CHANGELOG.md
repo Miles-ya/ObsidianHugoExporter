@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1 - 2026-08-20
+
+### Fixes
+
+- Remove use of metadata APIs newer than the declared minimum Obsidian version.
+- Update the manifest description to satisfy Community directory requirements.
+- Replace control-character placeholders and remove obsolete dependency usage flagged by automated review.
+
+### Documentation
+
+- Document required filesystem access and confirm that the plugin makes no network requests or collects user data.
+
 ## 1.2.0 - 2026-08-20
 
 ### Features

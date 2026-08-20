@@ -1,8 +1,9 @@
 import { App, EmbedCache, TFile } from 'obsidian';
-import * as path from 'path';
+import { extname } from 'node:path';
 import { createHashedImageName } from './image-naming';
-import { ReplacementRule } from './settings';
-import { applyReplacements, TextRangeReplacement } from './transform';
+import type { ReplacementRule } from './settings';
+import { applyReplacements } from './transform';
+import type { TextRangeReplacement } from './transform';
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp']);
 
@@ -24,7 +25,7 @@ function escapeAltText(value: string): string {
 
 function getExtension(link: string): string {
 	const withoutFragment = link.split('#', 1)[0];
-	return path.extname(withoutFragment).toLowerCase();
+	return extname(withoutFragment).toLowerCase();
 }
 
 function allocateOutputName(
@@ -69,11 +70,11 @@ export async function prepareImages(
 		let data: ArrayBuffer;
 		try {
 			data = await app.vault.readBinary(imageFile);
-		} catch (_error) {
+		} catch {
 			failedImages.push(imageFile.name);
 			continue;
 		}
-		const extension = path.extname(imageFile.name).toLowerCase();
+		const extension = extname(imageFile.name).toLowerCase();
 		const { fullHash } = createHashedImageName(data, extension);
 		const outputName = allocateOutputName(fullHash, extension, allocatedNames);
 		if (!assetsByName.has(outputName)) {

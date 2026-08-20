@@ -1,4 +1,4 @@
-import { ReplacementRule } from './settings';
+import type { ReplacementRule } from './settings';
 
 export function applyReplacements(value: string, rules: ReplacementRule[]): string {
 	return rules.reduce((result, rule) => {
@@ -17,9 +17,12 @@ export function replaceStringValues(value: unknown, rules: ReplacementRule[]): u
 		return value.map(item => replaceStringValues(item, rules));
 	}
 	if (value !== null && typeof value === 'object') {
-		return Object.fromEntries(
-			Object.entries(value).map(([key, item]) => [key, replaceStringValues(item, rules)])
-		);
+		const source = value as Record<string, unknown>;
+		const result: Record<string, unknown> = {};
+		for (const key of Object.keys(source)) {
+			result[key] = replaceStringValues(source[key], rules);
+		}
+		return result;
 	}
 	return value;
 }
@@ -38,6 +41,11 @@ export function stripDatePrefix(fileName: string): string {
 
 	const trimmedTitle = title.trim();
 	return trimmedTitle || fileName;
+}
+
+export function findMarkdownBodyOffset(rawContent: string): number {
+	const frontmatter = /^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/.exec(rawContent);
+	return frontmatter ? frontmatter[0].length : 0;
 }
 
 export function isSafeExportName(name: string): boolean {
@@ -85,14 +93,14 @@ export function transformBodyWithImages(
 			continue;
 		}
 		transformed += body.slice(cursor, start);
-		transformed += `\u0000HUGO_IMAGE_${imageMarkdown.length}\u0000`;
+		transformed += `\uE000HUGO_IMAGE_${imageMarkdown.length}\uE001`;
 		imageMarkdown.push(replacement.markdown);
 		cursor = end;
 	}
 	transformed += body.slice(cursor);
 
 	transformed = applyReplacements(transformed, rules);
-	transformed = transformed.replace(/\u0000HUGO_IMAGE_(\d+)\u0000/g, (_match, index: string) => {
+	transformed = transformed.replace(/\uE000HUGO_IMAGE_(\d+)\uE001/g, (_match, index: string) => {
 		return imageMarkdown[Number(index)] || '';
 	});
 	return transformed.trim();

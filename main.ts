@@ -1,7 +1,7 @@
 import { Notice, Plugin, TFile, moment } from 'obsidian';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as yaml from 'js-yaml';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { stringify as stringifyYaml } from 'yaml';
 import { claimExportDirectory } from './src/exporter';
 import { prepareImages } from './src/images';
 import { t } from './src/i18n';
@@ -13,11 +13,19 @@ import {
 import {
 	applyReplacements,
 	convertWikiLinks,
+	findMarkdownBodyOffset,
 	isSafeExportName,
 	replaceStringValues,
 	stripDatePrefix,
 	transformBodyWithImages
 } from './src/transform';
+
+function formatExportDate(value: unknown, fallbackTimestamp: number): string {
+	if (typeof value === 'string' || typeof value === 'number') {
+		return moment(value).format();
+	}
+	return moment(fallbackTimestamp).format();
+}
 
 export default class ObsidianHugoExporter extends Plugin {
 	settings: ObsidianHugoExporterSettings;
@@ -76,9 +84,9 @@ export default class ObsidianHugoExporter extends Plugin {
 			console.error(`Unable to read image: ${imageName}`);
 		}
 
-		const parentDirectory = path.join(this.settings.hugoPath, this.settings.contentPath);
+		const parentDirectory = join(this.settings.hugoPath, this.settings.contentPath);
 		const claimedDirectory = await claimExportDirectory(parentDirectory, exportBaseName);
-		const frontmatterEndOffset = fileCache?.frontmatterPosition?.end.offset || 0;
+		const frontmatterEndOffset = findMarkdownBodyOffset(rawContent);
 		let markdownContent = transformBodyWithImages(
 			rawContent,
 			frontmatterEndOffset,
@@ -91,24 +99,24 @@ export default class ObsidianHugoExporter extends Plugin {
 		delete userFrontmatter.position;
 		const frontmatter = replaceStringValues({
 			title: cleanedTitle,
-			date: userFrontmatter.date
-				? moment(String(userFrontmatter.date)).format()
-				: moment(activeFile.stat.mtime).format(),
+			date: formatExportDate(userFrontmatter.date, activeFile.stat.mtime),
 			draft: false,
 			...userFrontmatter
 		}, rules) as Record<string, unknown>;
 
 		if (claimedDirectory.suffix > 0) {
-			const effectiveTitle = frontmatter.title ?? exportBaseName;
-			frontmatter.title = `${String(effectiveTitle)}${claimedDirectory.suffix}`;
+			const effectiveTitle = typeof frontmatter.title === 'string'
+				? frontmatter.title
+				: exportBaseName;
+			frontmatter.title = `${effectiveTitle}${claimedDirectory.suffix}`;
 		}
 
-		const finalContent = `---\n${yaml.dump(frontmatter)}---\n\n${markdownContent}`;
-		await fs.writeFile(path.join(claimedDirectory.directoryPath, 'index.md'), finalContent, 'utf-8');
+		const finalContent = `---\n${stringifyYaml(frontmatter)}---\n\n${markdownContent}`;
+		await writeFile(join(claimedDirectory.directoryPath, 'index.md'), finalContent, 'utf-8');
 
 		for (const image of preparedImages.assets) {
-			await fs.writeFile(
-				path.join(claimedDirectory.directoryPath, image.outputName),
+			await writeFile(
+				join(claimedDirectory.directoryPath, image.outputName),
 				Buffer.from(image.data)
 			);
 		}

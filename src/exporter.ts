@@ -1,5 +1,5 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 
 export interface ClaimedExportDirectory {
 	directoryPath: string;
@@ -15,13 +15,13 @@ function isAlreadyExistsError(error: unknown): error is NodeJS.ErrnoException {
 }
 
 export async function claimExportDirectory(parentDirectory: string, baseName: string): Promise<ClaimedExportDirectory> {
-	await fs.mkdir(parentDirectory, { recursive: true });
+	await mkdir(parentDirectory, { recursive: true });
 
 	for (let suffix = 0; suffix < 10000; suffix += 1) {
 		const directoryName = suffix === 0 ? baseName : `${baseName}${suffix}`;
-		const directoryPath = path.join(parentDirectory, directoryName);
+		const directoryPath = join(parentDirectory, directoryName);
 		try {
-			await fs.mkdir(directoryPath);
+			await mkdir(directoryPath);
 			return { directoryPath, directoryName, suffix };
 		} catch (error) {
 			if (!isAlreadyExistsError(error)) {

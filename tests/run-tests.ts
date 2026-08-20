@@ -7,6 +7,7 @@ import { createHashedImageName } from '../src/image-naming';
 import {
 	applyReplacements,
 	convertWikiLinks,
+	findMarkdownBodyOffset,
 	isSafeExportName,
 	replaceStringValues,
 	stripDatePrefix,
@@ -37,6 +38,13 @@ function testDateAndNameHandling(): void {
 	assert.equal(isSafeExportName('文章'), true);
 	assert.equal(isSafeExportName('../文章'), false);
 	assert.equal(isSafeExportName(''), false);
+}
+
+function testFrontmatterDetection(): void {
+	assert.equal(findMarkdownBodyOffset('正文'), 0);
+	assert.equal(findMarkdownBodyOffset('---\ntitle: 测试\n---\n正文'), '---\ntitle: 测试\n---\n'.length);
+	assert.equal(findMarkdownBodyOffset('---\r\ntitle: 测试\r\n---\r\n正文'), '---\r\ntitle: 测试\r\n---\r\n'.length);
+	assert.equal(findMarkdownBodyOffset('---\ntitle: 未闭合\n正文'), 0);
 }
 
 function testImageTransformation(): void {
@@ -79,6 +87,7 @@ async function testDirectoryClaims(): Promise<void> {
 async function run(): Promise<void> {
 	testTextTransformations();
 	testDateAndNameHandling();
+	testFrontmatterDetection();
 	testImageTransformation();
 	await testDirectoryClaims();
 	console.log('All tests passed.');

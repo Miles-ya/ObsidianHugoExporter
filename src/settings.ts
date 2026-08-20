@@ -91,10 +91,9 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 							await this.exporter.saveSettings();
 						})
 				)
-				.addExtraButton(button =>
+				.addButton(button =>
 					button
-						.setIcon('trash-2')
-						.setTooltip(t('setting_replacement_remove'))
+						.setButtonText(t('setting_replacement_remove'))
 						.onClick(async () => {
 							this.exporter.settings.replacementRules.splice(index, 1);
 							await this.exporter.saveSettings();
