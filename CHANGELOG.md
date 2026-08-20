@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.2 - 2026-08-20
+
+### Fixes
+
+- Remove the redundant product name from the plugin description to satisfy the Community directory manifest check.
+- Adopt the current official Obsidian lint and type-checking stack and resolve all reported type-safety warnings.
+- Add searchable declarative settings for Obsidian 1.13 while retaining the legacy settings interface for older supported versions.
+
+### Build
+
+- Build releases with GitHub Actions and generate provenance attestations for plugin assets.
+
 ## 1.2.1 - 2026-08-20
 
 ### Fixes

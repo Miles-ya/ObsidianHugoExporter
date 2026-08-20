@@ -1,9 +1,9 @@
 {
 	"id": "hugo-exporter",
 	"name": "Hugo Exporter",
-	"version": "1.2.1",
+	"version": "1.2.2",
 	"minAppVersion": "0.15.0",
-	"description": "Exports Obsidian notes and images as Hugo page bundles.",
+	"description": "Exports notes and images as Hugo page bundles.",
 	"author": "Miles-ya",
 	"authorUrl": "https://github.com/Miles-ya",
 	"isDesktopOnly": true

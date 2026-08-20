@@ -8,6 +8,7 @@ import {
 	applyReplacements,
 	convertWikiLinks,
 	findMarkdownBodyOffset,
+	formatExportDate,
 	isSafeExportName,
 	replaceStringValues,
 	stripDatePrefix,
@@ -45,6 +46,13 @@ function testFrontmatterDetection(): void {
 	assert.equal(findMarkdownBodyOffset('---\ntitle: 测试\n---\n正文'), '---\ntitle: 测试\n---\n'.length);
 	assert.equal(findMarkdownBodyOffset('---\r\ntitle: 测试\r\n---\r\n正文'), '---\r\ntitle: 测试\r\n---\r\n'.length);
 	assert.equal(findMarkdownBodyOffset('---\ntitle: 未闭合\n正文'), 0);
+}
+
+function testDateFormatting(): void {
+	const fallback = new Date(2026, 7, 20, 12, 34, 56).getTime();
+	assert.match(formatExportDate(undefined, fallback), /^2026-08-20T12:34:56[+-]\d{2}:\d{2}$/);
+	assert.match(formatExportDate('2025-11-23', fallback), /^2025-11-23T00:00:00[+-]\d{2}:\d{2}$/);
+	assert.equal(formatExportDate('invalid', fallback), formatExportDate(undefined, fallback));
 }
 
 function testImageTransformation(): void {
@@ -88,9 +96,9 @@ async function run(): Promise<void> {
 	testTextTransformations();
 	testDateAndNameHandling();
 	testFrontmatterDetection();
+	testDateFormatting();
 	testImageTransformation();
 	await testDirectoryClaims();
-	console.log('All tests passed.');
 }
 
 void run();

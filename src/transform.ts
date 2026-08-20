@@ -48,6 +48,35 @@ export function findMarkdownBodyOffset(rawContent: string): number {
 	return frontmatter ? frontmatter[0].length : 0;
 }
 
+function padDatePart(value: number): string {
+	return String(value).padStart(2, '0');
+}
+
+export function formatExportDate(value: unknown, fallbackTimestamp: number): string {
+	let date: Date;
+	if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		const [year, month, day] = value.split('-').map(Number);
+		date = new Date(year, month - 1, day);
+	} else if (typeof value === 'string' || typeof value === 'number') {
+		date = new Date(value);
+	} else {
+		date = new Date(fallbackTimestamp);
+	}
+
+	if (Number.isNaN(date.getTime())) {
+		date = new Date(fallbackTimestamp);
+	}
+
+	const offsetMinutes = -date.getTimezoneOffset();
+	const offsetSign = offsetMinutes >= 0 ? '+' : '-';
+	const absoluteOffset = Math.abs(offsetMinutes);
+	return [
+		`${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`,
+		`T${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}:${padDatePart(date.getSeconds())}`,
+		`${offsetSign}${padDatePart(Math.floor(absoluteOffset / 60))}:${padDatePart(absoluteOffset % 60)}`
+	].join('');
+}
+
 export function isSafeExportName(name: string): boolean {
 	const trimmed = name.trim();
 	return trimmed.length > 0 && trimmed !== '.' && trimmed !== '..' && !/[\\/]/.test(trimmed);

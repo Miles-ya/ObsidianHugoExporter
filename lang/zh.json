@@ -14,6 +14,7 @@
     "setting_content_path_desc": "Hugo 文章目录的路径",
     "setting_replacements_name": "词语替换",
     "setting_replacements_desc": "导出时按顺序替换正文、标题和 Frontmatter 字符串值",
+    "setting_replacements_empty": "还没有替换规则",
     "setting_replacement_rule": "替换规则 {number}",
     "setting_replacement_from": "原词",
     "setting_replacement_to": "新词",

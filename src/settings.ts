@@ -1,4 +1,11 @@
-import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import {
+	App,
+	Plugin,
+	PluginSettingTab,
+	requireApiVersion,
+	Setting,
+	SettingDefinitionItem
+} from 'obsidian';
 import { t } from './i18n';
 
 export interface ReplacementRule {
@@ -32,12 +39,12 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
+		this.renderLegacySettings();
+	}
+
+	private renderLegacySettings(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName(t('setting_title'))
-			.setHeading();
 
 		new Setting(containerEl)
 			.setName(t('setting_hugo_path_name'))
@@ -57,7 +64,7 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 			.setDesc(t('setting_content_path_desc'))
 			.addText(text =>
 				text
-					.setPlaceholder('content/posts')
+					.setPlaceholder('')
 					.setValue(this.exporter.settings.contentPath)
 					.onChange(async value => {
 						this.exporter.settings.contentPath = value;
@@ -97,7 +104,7 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 						.onClick(async () => {
 							this.exporter.settings.replacementRules.splice(index, 1);
 							await this.exporter.saveSettings();
-							this.display();
+							this.renderLegacySettings();
 						})
 				);
 		});
@@ -109,8 +116,81 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 					.onClick(async () => {
 						this.exporter.settings.replacementRules.push({ from: '', to: '' });
 						await this.exporter.saveSettings();
-						this.display();
+						this.renderLegacySettings();
 					})
 			);
+	}
+
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: t('setting_hugo_path_name'),
+				desc: t('setting_hugo_path_desc'),
+				control: {
+					type: 'text',
+					key: 'hugoPath',
+					defaultValue: ''
+				}
+			},
+			{
+				name: t('setting_content_path_name'),
+				desc: t('setting_content_path_desc'),
+				control: {
+					type: 'text',
+					key: 'contentPath',
+					defaultValue: 'content/posts'
+				}
+			},
+			{
+				type: 'list',
+				heading: t('setting_replacements_name'),
+				emptyState: t('setting_replacements_empty'),
+				items: this.exporter.settings.replacementRules.map((rule, index) => ({
+					name: t('setting_replacement_rule').replace('{number}', String(index + 1)),
+					render: setting => {
+						setting
+							.addText(text => text
+								.setPlaceholder(t('setting_replacement_from'))
+								.setValue(rule.from)
+								.onChange(async value => {
+									rule.from = value;
+									await this.exporter.saveSettings();
+								}))
+							.addText(text => text
+								.setPlaceholder(t('setting_replacement_to'))
+								.setValue(rule.to)
+								.onChange(async value => {
+									rule.to = value;
+									await this.exporter.saveSettings();
+								}));
+					}
+				})),
+				onDelete: index => {
+					void this.deleteReplacementRule(index);
+				},
+				addItem: {
+					name: t('setting_replacement_add'),
+					action: () => {
+						void this.addReplacementRule();
+					}
+				}
+			}
+		];
+	}
+
+	private async deleteReplacementRule(index: number): Promise<void> {
+		this.exporter.settings.replacementRules.splice(index, 1);
+		await this.exporter.saveSettings();
+		if (requireApiVersion('1.13.0')) {
+			this.update();
+		}
+	}
+
+	private async addReplacementRule(): Promise<void> {
+		this.exporter.settings.replacementRules.push({ from: '', to: '' });
+		await this.exporter.saveSettings();
+		if (requireApiVersion('1.13.0')) {
+			this.update();
+		}
 	}
 }

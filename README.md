@@ -1,6 +1,6 @@
 # Obsidian Hugo Exporter
 
-Exports Obsidian notes and images to a [Hugo](https://gohugo.io/) site using Hugo's [Page Bundles](https://gohugo.io/content-management/page-bundles/) structure.
+Exports notes and images from your vault to a [Hugo](https://gohugo.io/) site using Hugo's [Page Bundles](https://gohugo.io/content-management/page-bundles/) structure.
 
 ---
 
@@ -61,3 +61,7 @@ Hugo Exporter is a desktop-only plugin because exporting requires access to a Hu
 - It writes the generated `index.md` and copied images only to the Hugo project directory configured in the plugin settings.
 - It does not make network requests, collect analytics, or transmit note contents, filenames, or settings.
 - Export directories are never overwritten or deleted. If a directory already exists, a numbered directory is created instead.
+
+## Release provenance
+
+Official release assets are built by GitHub Actions from the tagged source and include GitHub artifact attestations. This allows users to verify that `main.js`, `manifest.json`, and `styles.css` came from this repository's release workflow.

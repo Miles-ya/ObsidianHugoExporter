@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile, moment } from 'obsidian';
+import { Notice, Plugin, TFile } from 'obsidian';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
@@ -14,26 +14,18 @@ import {
 	applyReplacements,
 	convertWikiLinks,
 	findMarkdownBodyOffset,
+	formatExportDate,
 	isSafeExportName,
 	replaceStringValues,
 	stripDatePrefix,
 	transformBodyWithImages
 } from './src/transform';
 
-function formatExportDate(value: unknown, fallbackTimestamp: number): string {
-	if (typeof value === 'string' || typeof value === 'number') {
-		return moment(value).format();
-	}
-	return moment(fallbackTimestamp).format();
-}
-
 export default class ObsidianHugoExporter extends Plugin {
 	settings: ObsidianHugoExporterSettings;
 
 	async onload() {
 		await this.loadSettings();
-
-		console.debug(`ObsidianHugoExporter: Using language: ${moment.locale()}`);
 
 		this.addRibbonIcon('send', t('ribbon_tool_tip'), () => {
 			void this.exportCurrentFile();

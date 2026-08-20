@@ -1,11 +1,12 @@
 {
 	"name": "obsidian-hugo-exporter",
-	"version": "1.2.1",
-	"description": "Exports Obsidian notes and images as Hugo page bundles.",
+	"version": "1.2.2",
+	"description": "Exports notes and images as Hugo page bundles.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"lint": "eslint main.ts src tests",
 		"test": "node tests/test-runner.mjs",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
@@ -13,13 +14,15 @@
 	"author": "Miles-ya",
 	"license": "MIT",
 	"devDependencies": {
-		"@types/node": "^16.11.6",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
-		"@typescript-eslint/parser": "5.29.0",
+		"@types/node": "^20.12.12",
+		"@typescript-eslint/eslint-plugin": "^8.33.1",
+		"@typescript-eslint/parser": "^8.33.1",
 		"esbuild": "0.17.3",
-		"obsidian": "latest",
+		"eslint": "^9.30.1",
+		"eslint-plugin-obsidianmd": "^0.4.1",
+		"obsidian": "^1.13.1",
 		"tslib": "2.4.0",
-		"typescript": "4.7.4",
+		"typescript": "^5.4.5",
 		"yaml": "^2.8.1"
 	}
 }

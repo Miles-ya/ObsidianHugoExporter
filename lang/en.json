@@ -14,6 +14,7 @@
     "setting_content_path_desc": "The path to your Hugo content directory",
     "setting_replacements_name": "Word replacements",
     "setting_replacements_desc": "Replace body text, titles, and string frontmatter values in order during export",
+    "setting_replacements_empty": "No replacement rules yet",
     "setting_replacement_rule": "Replacement rule {number}",
     "setting_replacement_from": "Original text",
     "setting_replacement_to": "Replacement text",
