@@ -13,6 +13,9 @@ try {
 		bundle: true,
 		platform: 'node',
 		format: 'cjs',
+		alias: {
+			obsidian: './tests/obsidian-stub.ts'
+		},
 		outfile: outputFile,
 		logLevel: 'silent'
 	});

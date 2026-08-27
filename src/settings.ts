@@ -2,10 +2,9 @@ import {
 	App,
 	Plugin,
 	PluginSettingTab,
-	requireApiVersion,
-	Setting,
 	SettingDefinitionItem
 } from 'obsidian';
+import { validateContentPath, validateHugoPath } from './exporter';
 import { t } from './i18n';
 
 export interface ReplacementRule {
@@ -38,89 +37,6 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 		this.exporter = plugin;
 	}
 
-	display(): void {
-		this.renderLegacySettings();
-	}
-
-	private renderLegacySettings(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName(t('setting_hugo_path_name'))
-			.setDesc(t('setting_hugo_path_desc'))
-			.addText(text =>
-				text
-					.setPlaceholder('')
-					.setValue(this.exporter.settings.hugoPath)
-					.onChange(async value => {
-						this.exporter.settings.hugoPath = value;
-						await this.exporter.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t('setting_content_path_name'))
-			.setDesc(t('setting_content_path_desc'))
-			.addText(text =>
-				text
-					.setPlaceholder('')
-					.setValue(this.exporter.settings.contentPath)
-					.onChange(async value => {
-						this.exporter.settings.contentPath = value;
-						await this.exporter.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t('setting_replacements_name'))
-			.setDesc(t('setting_replacements_desc'))
-			.setHeading();
-
-		this.exporter.settings.replacementRules.forEach((rule, index) => {
-			new Setting(containerEl)
-				.setName(t('setting_replacement_rule').replace('{number}', String(index + 1)))
-				.addText(text =>
-					text
-						.setPlaceholder(t('setting_replacement_from'))
-						.setValue(rule.from)
-						.onChange(async value => {
-							rule.from = value;
-							await this.exporter.saveSettings();
-						})
-				)
-				.addText(text =>
-					text
-						.setPlaceholder(t('setting_replacement_to'))
-						.setValue(rule.to)
-						.onChange(async value => {
-							rule.to = value;
-							await this.exporter.saveSettings();
-						})
-				)
-				.addButton(button =>
-					button
-						.setButtonText(t('setting_replacement_remove'))
-						.onClick(async () => {
-							this.exporter.settings.replacementRules.splice(index, 1);
-							await this.exporter.saveSettings();
-							this.renderLegacySettings();
-						})
-				);
-		});
-
-		new Setting(containerEl)
-			.addButton(button =>
-				button
-					.setButtonText(t('setting_replacement_add'))
-					.onClick(async () => {
-						this.exporter.settings.replacementRules.push({ from: '', to: '' });
-						await this.exporter.saveSettings();
-						this.renderLegacySettings();
-					})
-			);
-	}
-
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
 			{
@@ -129,7 +45,8 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 				control: {
 					type: 'text',
 					key: 'hugoPath',
-					defaultValue: ''
+					defaultValue: '',
+					validate: value => validateHugoPath(value) ? undefined : t('setting_hugo_path_invalid')
 				}
 			},
 			{
@@ -138,12 +55,16 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 				control: {
 					type: 'text',
 					key: 'contentPath',
-					defaultValue: 'content/posts'
+					defaultValue: 'content/posts',
+					validate: value => validateContentPath(value) ? undefined : t('setting_content_path_invalid')
 				}
 			},
 			{
+				name: t('setting_replacements_name'),
+				desc: t('setting_replacements_desc')
+			},
+			{
 				type: 'list',
-				heading: t('setting_replacements_name'),
 				emptyState: t('setting_replacements_empty'),
 				items: this.exporter.settings.replacementRules.map((rule, index) => ({
 					name: t('setting_replacement_rule').replace('{number}', String(index + 1)),
@@ -181,16 +102,12 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 	private async deleteReplacementRule(index: number): Promise<void> {
 		this.exporter.settings.replacementRules.splice(index, 1);
 		await this.exporter.saveSettings();
-		if (requireApiVersion('1.13.0')) {
-			this.update();
-		}
+		this.update();
 	}
 
 	private async addReplacementRule(): Promise<void> {
 		this.exporter.settings.replacementRules.push({ from: '', to: '' });
 		await this.exporter.saveSettings();
-		if (requireApiVersion('1.13.0')) {
-			this.update();
-		}
+		this.update();
 	}
 }

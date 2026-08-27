@@ -79,7 +79,20 @@ export function formatExportDate(value: unknown, fallbackTimestamp: number): str
 
 export function isSafeExportName(name: string): boolean {
 	const trimmed = name.trim();
-	return trimmed.length > 0 && trimmed !== '.' && trimmed !== '..' && !/[\\/]/.test(trimmed);
+	const hasControlCharacter = Array.from(name).some(character => character.charCodeAt(0) <= 31);
+	if (
+		trimmed.length === 0
+		|| trimmed === '.'
+		|| trimmed === '..'
+		|| name !== name.trimEnd()
+		|| name.endsWith('.')
+		|| hasControlCharacter
+		|| /[<>:"/\\|?*]/.test(name)
+	) {
+		return false;
+	}
+
+	return !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(trimmed);
 }
 
 export function convertWikiLinks(markdown: string): string {

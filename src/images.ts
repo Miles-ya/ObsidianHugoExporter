@@ -1,6 +1,6 @@
 import { App, EmbedCache, TFile } from 'obsidian';
 import { extname } from 'node:path';
-import { createHashedImageName } from './image-naming';
+import { allocateImageName, createImageHash } from './image-naming';
 import type { ReplacementRule } from './settings';
 import { applyReplacements } from './transform';
 import type { TextRangeReplacement } from './transform';
@@ -26,22 +26,6 @@ function escapeAltText(value: string): string {
 function getExtension(link: string): string {
 	const withoutFragment = link.split('#', 1)[0];
 	return extname(withoutFragment).toLowerCase();
-}
-
-function allocateOutputName(
-	fullHash: string,
-	extension: string,
-	allocatedNames: Map<string, string>
-): string {
-	for (let length = 16; length <= fullHash.length; length += 4) {
-		const candidate = `${fullHash.slice(0, length)}${extension}`;
-		const existingHash = allocatedNames.get(candidate);
-		if (!existingHash || existingHash === fullHash) {
-			allocatedNames.set(candidate, fullHash);
-			return candidate;
-		}
-	}
-	throw new Error('Unable to allocate a unique image filename');
 }
 
 export async function prepareImages(
@@ -75,8 +59,8 @@ export async function prepareImages(
 			continue;
 		}
 		const extension = extname(imageFile.name).toLowerCase();
-		const { fullHash } = createHashedImageName(data, extension);
-		const outputName = allocateOutputName(fullHash, extension, allocatedNames);
+		const fullHash = createImageHash(data);
+		const outputName = allocateImageName(fullHash, extension, allocatedNames);
 		if (!assetsByName.has(outputName)) {
 			assetsByName.set(outputName, { outputName, data });
 		}

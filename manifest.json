@@ -1,8 +1,8 @@
 {
 	"id": "hugo-exporter",
 	"name": "Hugo Exporter",
-	"version": "1.2.2",
-	"minAppVersion": "0.15.0",
+	"version": "1.2.3",
+	"minAppVersion": "1.13.0",
 	"description": "Exports notes and images as Hugo page bundles.",
 	"author": "Miles-ya",
 	"authorUrl": "https://github.com/Miles-ya",

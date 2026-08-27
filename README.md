@@ -2,6 +2,8 @@
 
 Exports notes and images from your vault to a [Hugo](https://gohugo.io/) site using Hugo's [Page Bundles](https://gohugo.io/content-management/page-bundles/) structure.
 
+Requires Obsidian 1.13.0 or later.
+
 ---
 
 ## Features
@@ -14,7 +16,8 @@ Exports notes and images from your vault to a [Hugo](https://gohugo.io/) site us
 -   **Daily Note Names**: Removes a valid leading `YYYY-MM-DD ` date from the exported directory and default title.
 -   **Word Replacements**: Applies configurable, ordered text replacement rules during export.
 -   **Conflict-safe Export**: Creates `title1`, `title2`, and so on when an export directory already exists, without overwriting old content.
--   **Configurable Paths**: Allows you to set the path to your Hugo project and the content directory.
+-   **Validated Paths**: Requires an absolute Hugo project path and keeps the relative content path inside that project.
+-   **Failure-safe Writes**: Publishes `index.md` only after all assets are ready and removes an incomplete export after a normal filesystem error.
 
 ## How to Use
 
@@ -22,7 +25,7 @@ Exports notes and images from your vault to a [Hugo](https://gohugo.io/) site us
 2.  **Configuration**:
     -   Open the plugin settings for "Obsidian Hugo Exporter".
     -   Set the **Hugo Path**: This is the absolute path to the root directory of your Hugo project.
-    -   Set the **Content Path**: This is the path within your Hugo project where you want your posts to be saved. The default is `content/posts`.
+    -   Set the **Content Path**: This must be a relative path within your Hugo project. The default is `content/posts`; absolute paths and paths containing `..` that escape the project are rejected.
     -   Add any **Word Replacements** you want to apply to exported body text, titles, directory names, and string frontmatter values.
     -   **Permalink Configuration**: Additionally, ensure that in your `hugo.toml` file, you change `[permalinks] posts = "/posts/:year/:month/:title/"` to `[permalinks] posts = "/posts/:title/"`.
 3.  **Exporting**:
@@ -60,8 +63,8 @@ Hugo Exporter is a desktop-only plugin because exporting requires access to a Hu
 - It reads only the active note and local image files referenced by that note through the Obsidian Vault API.
 - It writes the generated `index.md` and copied images only to the Hugo project directory configured in the plugin settings.
 - It does not make network requests, collect analytics, or transmit note contents, filenames, or settings.
-- Export directories are never overwritten or deleted. If a directory already exists, a numbered directory is created instead.
+- Existing export directories are never overwritten or deleted. If a directory already exists, a numbered directory is created instead. A new directory created by a failed export is removed automatically.
 
 ## Release provenance
 
-Official release assets are built by GitHub Actions from the tagged source and include GitHub artifact attestations. This allows users to verify that `main.js`, `manifest.json`, and `styles.css` came from this repository's release workflow.
+Official release assets are built by GitHub Actions from the tagged source and include GitHub artifact attestations. This allows users to verify that `main.js` and `manifest.json` came from this repository's release workflow. A `styles.css` asset is only needed if the plugin adds custom styles in a future release.
