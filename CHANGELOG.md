@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.3 - 2026-08-26
+
+### Fixes
+
+- Validate export paths and cross-platform directory names before writing outside the vault.
+- Stage page bundle files, publish `index.md` last, and remove newly created directories after normal filesystem failures.
+
+### Refactor
+
+- Require Obsidian 1.13.0 and remove the duplicate legacy settings interface.
+- Move export orchestration out of the plugin lifecycle entry point and enable full TypeScript strict mode.
+- Stop tracking generated JavaScript and remove the unused stylesheet release asset.
+
+### Tests
+
+- Cover path containment, filename portability, image warnings, hash collisions, conflict suffixes, commit ordering, rollback behavior, and locale parity.
+
 ## 1.2.2 - 2026-08-20
 
 ### Fixes
