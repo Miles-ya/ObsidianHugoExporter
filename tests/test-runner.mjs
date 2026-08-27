@@ -16,6 +16,7 @@ try {
 		alias: {
 			obsidian: './tests/obsidian-stub.ts'
 		},
+		banner: { js: 'var window = global;' },
 		outfile: outputFile,
 		logLevel: 'silent'
 	});

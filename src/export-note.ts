@@ -7,7 +7,10 @@ import {
 	resolveExportParentDirectory,
 	writeExportBundle
 } from './exporter';
+import type { ClaimedExportDirectory } from './exporter';
 import { prepareImages } from './images';
+import type { ImageAsset } from './images';
+import type { MetadataReport, MetadataRemover } from './metadata-cleaner';
 import type { ObsidianHugoExporterSettings } from './settings';
 import {
 	applyReplacements,
@@ -27,6 +30,21 @@ export type ExportWarning =
 export interface ExportResult {
 	directoryName: string;
 	warnings: ExportWarning[];
+	metadataReports: MetadataReport[];
+}
+
+export interface PreparedExport {
+	parentDirectory: string;
+	claimedDirectory: ClaimedExportDirectory;
+	markdown: string;
+	assets: ImageAsset[];
+	warnings: ExportWarning[];
+	metadataReports: MetadataReport[];
+}
+
+export interface PrepareExportOptions {
+	onStage?: (stage: 'prepare' | 'metadata') => void;
+	metadataRemover?: MetadataRemover;
 }
 
 export class InvalidExportNameError extends Error {
@@ -36,11 +54,22 @@ export class InvalidExportNameError extends Error {
 	}
 }
 
-export async function exportNote(
+async function rollbackPreparedExport(prepared: PreparedExport, error: unknown): Promise<never> {
+	try {
+		await removeClaimedExportDirectory(prepared.parentDirectory, prepared.claimedDirectory);
+	} catch (cleanupError) {
+		throw new ExportRollbackError(error, cleanupError);
+	}
+	throw error;
+}
+
+export async function prepareExport(
 	app: App,
 	activeFile: TFile,
-	settings: ObsidianHugoExporterSettings
-): Promise<ExportResult> {
+	settings: ObsidianHugoExporterSettings,
+	options: PrepareExportOptions = {}
+): Promise<PreparedExport> {
+	options.onStage?.('prepare');
 	const parentDirectory = resolveExportParentDirectory(settings.hugoPath, settings.contentPath);
 	const rawContent = await app.vault.read(activeFile);
 	const fileCache = app.metadataCache.getFileCache(activeFile);
@@ -52,51 +81,84 @@ export async function exportNote(
 		throw new InvalidExportNameError(exportBaseName || activeFile.basename);
 	}
 
-	const preparedImages = await prepareImages(app, activeFile, fileCache?.embeds || [], rules);
+	options.onStage?.('metadata');
+	const preparedImages = await prepareImages(
+		app,
+		activeFile,
+		fileCache?.embeds || [],
+		rules,
+		options.metadataRemover
+	);
 	const claimedDirectory = await claimExportDirectory(parentDirectory, exportBaseName);
-	const markdownContent = convertWikiLinks(transformBodyWithImages(
-		rawContent,
-		findMarkdownBodyOffset(rawContent),
-		preparedImages.replacements,
-		rules
-	));
-
-	const userFrontmatter: Record<string, unknown> = { ...(fileCache?.frontmatter || {}) };
-	delete userFrontmatter.position;
-	const frontmatter = replaceStringValues({
-		title: cleanedTitle,
-		date: formatExportDate(userFrontmatter.date, activeFile.stat.mtime),
-		draft: false,
-		...userFrontmatter
-	}, rules) as Record<string, unknown>;
-
-	if (claimedDirectory.suffix > 0) {
-		const effectiveTitle = typeof frontmatter.title === 'string'
-			? frontmatter.title
-			: exportBaseName;
-		frontmatter.title = `${effectiveTitle}${claimedDirectory.suffix}`;
-	}
-
-	try {
-		const finalContent = `---\n${stringifyYaml(frontmatter)}---\n\n${markdownContent}`;
-		await writeExportBundle(parentDirectory, claimedDirectory, finalContent, preparedImages.assets);
-	} catch (error) {
-		try {
-			await removeClaimedExportDirectory(parentDirectory, claimedDirectory);
-		} catch (cleanupError) {
-			if (error instanceof ExportRollbackError) {
-				throw error;
-			}
-			throw new ExportRollbackError(error, cleanupError);
-		}
-		throw error;
-	}
-
-	return {
-		directoryName: claimedDirectory.directoryName,
+	const prepared: PreparedExport = {
+		parentDirectory,
+		claimedDirectory,
+		markdown: '',
+		assets: preparedImages.assets,
 		warnings: [
 			...preparedImages.missingLinks.map(value => ({ type: 'missing-image' as const, value })),
 			...preparedImages.failedImages.map(value => ({ type: 'image-read-failed' as const, value }))
-		]
+		],
+		metadataReports: preparedImages.metadataReports
 	};
+
+	try {
+		const markdownBody = convertWikiLinks(transformBodyWithImages(
+			rawContent,
+			findMarkdownBodyOffset(rawContent),
+			preparedImages.replacements,
+			rules
+		));
+
+		const userFrontmatter: Record<string, unknown> = { ...(fileCache?.frontmatter || {}) };
+		delete userFrontmatter.position;
+		const frontmatter = replaceStringValues({
+			title: cleanedTitle,
+			date: formatExportDate(userFrontmatter.date, activeFile.stat.mtime),
+			draft: false,
+			...userFrontmatter
+		}, rules) as Record<string, unknown>;
+
+		if (claimedDirectory.suffix > 0) {
+			const effectiveTitle = typeof frontmatter.title === 'string'
+				? frontmatter.title
+				: exportBaseName;
+			frontmatter.title = `${effectiveTitle}${claimedDirectory.suffix}`;
+		}
+
+		prepared.markdown = `---\n${stringifyYaml(frontmatter)}---\n\n${markdownBody}`;
+		return prepared;
+	} catch (error) {
+		return rollbackPreparedExport(prepared, error);
+	}
+}
+
+export async function commitExport(
+	prepared: PreparedExport,
+	markdown: string = prepared.markdown
+): Promise<ExportResult> {
+	await writeExportBundle(
+		prepared.parentDirectory,
+		prepared.claimedDirectory,
+		markdown,
+		prepared.assets
+	);
+	return {
+		directoryName: prepared.claimedDirectory.directoryName,
+		warnings: prepared.warnings,
+		metadataReports: prepared.metadataReports
+	};
+}
+
+export async function discardExport(prepared: PreparedExport): Promise<void> {
+	await removeClaimedExportDirectory(prepared.parentDirectory, prepared.claimedDirectory);
+}
+
+export async function exportNote(
+	app: App,
+	activeFile: TFile,
+	settings: ObsidianHugoExporterSettings
+): Promise<ExportResult> {
+	const prepared = await prepareExport(app, activeFile, settings);
+	return commitExport(prepared);
 }
