@@ -41,6 +41,7 @@ jobs:
         run: |
           mkdir release
           cp main.js manifest.json release/
+          if [ -f styles.css ]; then cp styles.css release/; fi
 
       - name: Attest release assets
         uses: actions/attest-build-provenance@v3
