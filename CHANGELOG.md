@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.0 - 2026-08-26
+
+### Features
+
+- Review the complete final Markdown with a configurable OpenAI-compatible endpoint before publishing.
+- Automatically adapt structured output for OpenAI, DeepSeek, compatible gateways, and local model services.
+- Let users select and edit individual AI suggestions while requiring fixes for credential and identity/financial risks.
+- Strip privacy metadata from referenced images locally while preserving orientation and color profiles.
+
+### Safety
+
+- Send only the current article's final Markdown to the configured AI provider; images and image metadata never leave the device.
+- Keep all review fixes isolated to the export copy and retain no review history, result hashes, or article content.
+- Roll back the newly claimed export directory after cancellation, review failure, invalid fixes, or filesystem errors.
+
+### Refactor
+
+- Split the export workflow, AI client, review fixes, review UI, and metadata cleaner into independently testable modules.
+- Keep AI review globally enabled by default and retain local metadata cleaning when review is disabled.
+
 ## 1.2.3 - 2026-08-26
 
 ### Fixes
