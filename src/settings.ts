@@ -5,7 +5,7 @@ import {
 	PluginSettingTab,
 	SecretComponent
 } from 'obsidian';
-import type { SettingDefinitionItem } from 'obsidian';
+import type { Setting, SettingDefinitionItem } from 'obsidian';
 import { getAiReviewErrorCode, testAiConnection } from './ai-review';
 import { validateContentPath, validateHugoPath } from './exporter';
 import { t } from './i18n';
@@ -99,6 +99,44 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 			},
 			{
 				type: 'group',
+				items: [
+					{
+						name: t('setting_replacements_name'),
+						desc: t('setting_replacements_desc'),
+						render: setting => {
+							setting.addButton(button => button
+								.setButtonText(t('setting_replacement_add'))
+								.onClick(() => void this.addReplacementRule()));
+						}
+					},
+					...this.exporter.settings.replacementRules.map((rule, index) => ({
+						name: t('setting_replacement_rule').replace('{number}', String(index + 1)),
+						render: (setting: Setting) => {
+							setting
+								.addText(text => text
+									.setPlaceholder(t('setting_replacement_from'))
+									.setValue(rule.from)
+									.onChange(async value => {
+										rule.from = value;
+										await this.exporter.saveSettings();
+									}))
+								.addText(text => text
+									.setPlaceholder(t('setting_replacement_to'))
+									.setValue(rule.to)
+									.onChange(async value => {
+										rule.to = value;
+										await this.exporter.saveSettings();
+									}))
+								.addExtraButton(button => button
+									.setIcon('trash-2')
+									.setTooltip(t('setting_replacement_delete'))
+									.onClick(() => void this.deleteReplacementRule(index)));
+						}
+					}))
+				]
+			},
+			{
+				type: 'group',
 				heading: t('setting_ai_heading'),
 				items: [
 					{
@@ -171,43 +209,6 @@ export class ObsidianHugoExporterSettingTab extends PluginSettingTab {
 						visible: () => this.exporter.settings.aiReviewEnabled
 					}
 				]
-			},
-			{
-				name: t('setting_replacements_name'),
-				desc: t('setting_replacements_desc')
-			},
-			{
-				type: 'list',
-				emptyState: t('setting_replacements_empty'),
-				items: this.exporter.settings.replacementRules.map((rule, index) => ({
-					name: t('setting_replacement_rule').replace('{number}', String(index + 1)),
-					render: setting => {
-						setting
-							.addText(text => text
-								.setPlaceholder(t('setting_replacement_from'))
-								.setValue(rule.from)
-								.onChange(async value => {
-									rule.from = value;
-									await this.exporter.saveSettings();
-								}))
-							.addText(text => text
-								.setPlaceholder(t('setting_replacement_to'))
-								.setValue(rule.to)
-								.onChange(async value => {
-									rule.to = value;
-									await this.exporter.saveSettings();
-								}));
-					}
-				})),
-				onDelete: index => {
-					void this.deleteReplacementRule(index);
-				},
-				addItem: {
-					name: t('setting_replacement_add'),
-					action: () => {
-						void this.addReplacementRule();
-					}
-				}
 			}
 		];
 	}

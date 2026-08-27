@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { App, EmbedCache, TFile } from 'obsidian';
 import type { RequestUrlParam, RequestUrlResponse } from 'obsidian';
-import { AiReviewError, reviewMarkdown } from '../src/ai-review';
+import { AiReviewError, buildReviewInstructions, reviewMarkdown } from '../src/ai-review';
 import type { ReviewIssue } from '../src/ai-review';
 import { exportNote } from '../src/export-note';
 import type { ExportResult, PreparedExport } from '../src/export-note';
@@ -257,7 +257,7 @@ function createReviewIssue(overrides: Partial<ReviewIssue> = {}): ReviewIssue {
 	return {
 		id: 'issue-1',
 		level: 'warning',
-		category: 'private-path',
+		category: 'personal-privacy',
 		title: 'Private path',
 		reason: 'Local path',
 		exactText: '/home/user/private',
@@ -272,12 +272,12 @@ function testReviewFixes(): void {
 	const blocking = createReviewIssue({
 		id: 'secret',
 		level: 'blocking',
-		category: 'secret-credential',
+		category: 'identity-financial',
 		exactText: 'Safe',
 		suggestedReplacement: 'Redacted'
 	});
 
-	assert.equal(validateReviewFixes(markdown, [blocking], {})?.code, 'blocking-unresolved');
+	assert.equal(validateReviewFixes(markdown, [blocking], {}), null);
 	const selections = {
 		[warning.id]: { selected: true, replacement: 'workspace' },
 		[blocking.id]: { selected: true, replacement: 'Public' }
@@ -323,6 +323,10 @@ function createReviewResponse(
 }
 
 async function testAiReviewClient(): Promise<void> {
+	assert.match(buildReviewInstructions('zh'), /Simplified Chinese/);
+	assert.match(buildReviewInstructions('zh-tw'), /Traditional Chinese/);
+	assert.match(buildReviewInstructions('fr'), /locale code "fr"/);
+	assert.match(buildReviewInstructions('zh'), /Do not translate exactText/);
 	const requests: RequestUrlParam[] = [];
 	const app = {
 		secretStorage: { getSecret: (name: string) => name === 'hugo-exporter-key' ? 'test-key' : null }
@@ -346,6 +350,7 @@ async function testAiReviewClient(): Promise<void> {
 	};
 	assert.equal(payload.messages[1].content, '# Final markdown');
 	assert.match(payload.messages[0].content, /Return JSON only/);
+	assert.match(payload.messages[0].content, /Write title, reason, and suggestedReplacement in English/);
 	assert.equal(payload.response_format.type, 'json_object');
 	assert.doesNotMatch(requests[0].body as string, /test-key/);
 
@@ -395,6 +400,21 @@ async function testAiReviewClient(): Promise<void> {
 	assert.deepEqual(localResult, { issues: [] });
 	assert.equal(localRequests[0].url, 'http://127.0.0.1:11434/v1/chat/completions');
 	assert.deepEqual(localRequests[0].headers, {});
+
+	const wrappedResult = await reviewMarkdown(app, '# Wrapped', settings, async () =>
+		createReviewResponse([], 'Here is the result:\n```json\n{"issues":[]}\n```\nDone.')
+	);
+	assert.deepEqual(wrappedResult, { issues: [] });
+
+	let invalidAttempts = 0;
+	const recoveredResult = await reviewMarkdown(app, '# Recover', settings, async () => {
+		invalidAttempts += 1;
+		return invalidAttempts === 1
+			? createReviewResponse([], '{invalid json')
+			: createReviewResponse([]);
+	});
+	assert.deepEqual(recoveredResult, { issues: [] });
+	assert.equal(invalidAttempts, 2);
 
 	for (const [status, code] of [
 		[402, 'insufficient-balance'],

@@ -2,8 +2,7 @@ import {
 	App,
 	ButtonComponent,
 	ConfirmationModal,
-	Modal,
-	Setting
+	Modal
 } from 'obsidian';
 import type { ReviewIssue } from './ai-review';
 import type { MetadataReport } from './metadata-cleaner';
@@ -112,6 +111,7 @@ class ReviewModal extends Modal {
 
 	onOpen(): void {
 		this.setTitle(t('review_title'));
+		this.modalEl.addClass('hugo-exporter-review-modal');
 		const blockingCount = this.issues.filter(issue => issue.level === 'blocking').length;
 		const warningCount = this.issues.length - blockingCount;
 		this.contentEl.createEl('p', {
@@ -122,13 +122,11 @@ class ReviewModal extends Modal {
 		});
 		this.contentEl.createEl('p', { text: t('review_copy_only') });
 
-		for (const issue of this.issues) {
-			this.renderIssue(issue);
-		}
+		if (this.issues.length > 0) this.renderIssuesTable();
 		this.renderMetadataReports();
 
 		const errorEl = this.contentEl.createEl('p');
-		const footer = this.contentEl.createDiv();
+		const footer = this.contentEl.createDiv({ cls: 'hugo-exporter-review-footer' });
 		new ButtonComponent(footer)
 			.setButtonText(t('button_cancel'))
 			.onClick(() => this.close());
@@ -142,16 +140,6 @@ class ReviewModal extends Modal {
 					errorEl.setText(t(`review_fix_error_${validationError.code}`));
 					return;
 				}
-
-				const unresolvedWarnings = this.issues.some(issue =>
-					issue.level === 'warning' && !this.selections[issue.id]?.selected
-				);
-				if (unresolvedWarnings && !await confirmAction(
-					this.app,
-					t('review_warning_confirm_title'),
-					t('review_warning_confirm_desc'),
-					t('review_warning_confirm_action')
-				)) return;
 
 				const metadataFailed = this.metadataReports.some(report => report.status === 'failed');
 				if (metadataFailed && !await confirmAction(
@@ -167,39 +155,64 @@ class ReviewModal extends Modal {
 			});
 	}
 
-	private renderIssue(issue: ReviewIssue): void {
-		this.contentEl.createEl('hr');
+	private renderIssuesTable(): void {
+		const wrapper = this.contentEl.createDiv({ cls: 'hugo-exporter-review-table-wrapper' });
+		const table = wrapper.createEl('table', { cls: 'hugo-exporter-review-table' });
+		const header = table.createEl('thead').createEl('tr');
+		header.createEl('th', { text: t('review_column_issue') });
+		header.createEl('th', { text: t('review_column_replacement') });
+		header.createEl('th', { text: t('review_column_action') });
+		const body = table.createEl('tbody');
+		const orderedIssues = [...this.issues].sort((left, right) =>
+			(left.level === 'blocking' ? 0 : 1) - (right.level === 'blocking' ? 0 : 1)
+		);
+		for (const issue of orderedIssues) this.renderIssueRow(body, issue);
+	}
+
+	private renderIssueRow(body: HTMLTableSectionElement, issue: ReviewIssue): void {
+		const row = body.createEl('tr');
 		const prefix = issue.level === 'blocking'
 			? t('review_level_blocking')
 			: t('review_level_warning');
-		this.contentEl.createEl('h3', { text: `${prefix} ${issue.title}` });
-		this.contentEl.createEl('p', { text: issue.reason });
-		this.contentEl.createEl('pre', { text: issue.exactText });
+		const issueCell = row.createEl('td', { attr: { 'data-label': t('review_column_issue') } });
+		issueCell.createSpan({
+			cls: `hugo-exporter-review-level is-${issue.level}`,
+			text: prefix
+		});
+		issueCell.createEl('strong', { text: issue.title });
+		issueCell.createEl('p', { text: issue.reason });
+		issueCell.createEl('code', { text: issue.exactText });
+
 		this.selections[issue.id] = {
 			selected: false,
 			replacement: issue.suggestedReplacement
 		};
 
-		let replacementInput: HTMLTextAreaElement | null = null;
-		new Setting(this.contentEl)
-			.setName(t('review_apply_fix'))
-			.addToggle(toggle => toggle
-				.setValue(false)
-				.onChange(value => {
-					this.selections[issue.id].selected = value;
-					if (replacementInput) replacementInput.disabled = !value;
-				}));
-		new Setting(this.contentEl)
-			.setName(t('review_replacement'))
-			.addTextArea(textarea => {
-				replacementInput = textarea.inputEl;
-				textarea.inputEl.disabled = true;
-				textarea
-					.setValue(issue.suggestedReplacement)
-					.onChange(value => {
-						this.selections[issue.id].replacement = value;
-					});
-			});
+		const replacementCell = row.createEl('td', {
+			attr: { 'data-label': t('review_column_replacement') }
+		});
+		const replacementInput = replacementCell.createEl('textarea', {
+			cls: 'hugo-exporter-review-replacement',
+			text: issue.suggestedReplacement
+		});
+		replacementInput.addEventListener('input', () => {
+			this.selections[issue.id].replacement = replacementInput.value;
+		});
+
+		const actionCell = row.createEl('td', {
+			cls: 'hugo-exporter-review-actions',
+			attr: { 'data-label': t('review_column_action') }
+		});
+		const replaceButton = actionCell.createEl('button', { text: t('review_action_replace') });
+		const ignoreButton = actionCell.createEl('button', { text: t('review_action_ignore') });
+		const setAction = (replace: boolean): void => {
+			this.selections[issue.id].selected = replace;
+			replaceButton.toggleClass('mod-cta', replace);
+			ignoreButton.toggleClass('mod-cta', !replace);
+			row.toggleClass('is-ignored', !replace);
+		};
+		replaceButton.addEventListener('click', () => setAction(true));
+		ignoreButton.addEventListener('click', () => setAction(false));
 	}
 
 	private renderMetadataReports(): void {

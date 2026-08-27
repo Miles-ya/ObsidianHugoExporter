@@ -1,0 +1,109 @@
+.hugo-exporter-review-modal {
+	width: min(960px, calc(100vw - 32px));
+}
+
+.hugo-exporter-review-table-wrapper {
+	overflow-x: auto;
+	margin: var(--size-4-4) 0;
+}
+
+.hugo-exporter-review-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.hugo-exporter-review-table th,
+.hugo-exporter-review-table td {
+	padding: var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+	text-align: left;
+	vertical-align: top;
+}
+
+.hugo-exporter-review-table th:nth-child(1) {
+	width: 42%;
+}
+
+.hugo-exporter-review-table th:nth-child(2) {
+	width: 38%;
+}
+
+.hugo-exporter-review-table p {
+	margin: var(--size-2-2) 0;
+}
+
+.hugo-exporter-review-level {
+	display: inline-block;
+	margin-right: var(--size-2-2);
+	font-weight: var(--font-semibold);
+}
+
+.hugo-exporter-review-level.is-blocking {
+	color: var(--text-error);
+}
+
+.hugo-exporter-review-level.is-warning {
+	color: var(--text-warning, #d97706);
+}
+
+.hugo-exporter-review-table code {
+	display: block;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.hugo-exporter-review-replacement {
+	width: 100%;
+	min-height: 84px;
+	resize: vertical;
+}
+
+.hugo-exporter-review-actions {
+	white-space: nowrap;
+}
+
+.hugo-exporter-review-actions button + button {
+	margin-left: var(--size-2-2);
+}
+
+.hugo-exporter-review-table tr.is-ignored .hugo-exporter-review-replacement {
+	opacity: 0.6;
+}
+
+.hugo-exporter-review-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--size-2-2);
+}
+
+@media (max-width: 700px) {
+	.hugo-exporter-review-table thead {
+		display: none;
+	}
+
+	.hugo-exporter-review-table,
+	.hugo-exporter-review-table tbody,
+	.hugo-exporter-review-table tr,
+	.hugo-exporter-review-table td {
+		display: block;
+		width: 100%;
+	}
+
+	.hugo-exporter-review-table tr {
+		padding: var(--size-4-2) 0;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+
+	.hugo-exporter-review-table td {
+		border: 0;
+	}
+
+	.hugo-exporter-review-table td::before {
+		display: block;
+		margin-bottom: var(--size-2-2);
+		color: var(--text-muted);
+		font-size: var(--font-ui-smaller);
+		font-weight: var(--font-semibold);
+		content: attr(data-label);
+	}
+}

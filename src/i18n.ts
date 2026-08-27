@@ -1,4 +1,4 @@
-import { moment } from 'obsidian';
+import { getLanguage } from 'obsidian';
 import en from '../lang/en.json';
 import zh from '../lang/zh.json';
 
@@ -7,7 +7,7 @@ const translations: Record<string, Record<string, string>> = {
     zh,
 };
 
-const locale = moment.locale();
+const locale = getLanguage().toLowerCase();
 
 function getTranslation() {
     // 优先完全匹配

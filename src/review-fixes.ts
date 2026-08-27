@@ -9,7 +9,6 @@ export interface ReviewFixSelection {
 export type ReviewFixSelections = Record<string, ReviewFixSelection>;
 
 export type ReviewFixErrorCode =
-	| 'blocking-unresolved'
 	| 'target-not-unique'
 	| 'empty-replacement'
 	| 'overlapping-fixes'
@@ -45,9 +44,6 @@ function collectFixes(
 	const fixes: LocatedFix[] = [];
 	for (const issue of issues) {
 		const selection = selections[issue.id];
-		if (issue.level === 'blocking' && !selection?.selected) {
-			throw new ReviewFixError('blocking-unresolved', issue.id);
-		}
 		if (!selection?.selected) continue;
 		if (!selection.replacement.trim()) {
 			throw new ReviewFixError('empty-replacement', issue.id);
