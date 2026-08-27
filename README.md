@@ -14,8 +14,9 @@ Requires Obsidian 1.13.0 or later.
 -   **Link Conversion**: Converts Obsidian `[[wikilinks]]` to Hugo-friendly relative links and local image embeds to standard Markdown image links.
 -   **Image Handling**: Copies local images into the Page Bundle and gives them stable SHA-256-based names to avoid filename conflicts.
 -   **Local Metadata Cleaning**: Removes privacy metadata from referenced JPEG, PNG, WebP, GIF, and SVG images before hashing and copying, while preserving orientation and color profiles. BMP files are copied unchanged.
--   **AI Publishing Review**: Reviews only the current article's complete final Markdown for secrets, sensitive personal data, private paths, unfinished markers, and unsafe publishing links.
--   **Copy-only Fixes**: Lets you select and edit individual review suggestions without changing the source note in Obsidian.
+-   **AI Publishing Review**: Reviews the current article's final Markdown for sensitive topics, personally identifiable information, and location data using a configurable OpenAI-compatible service.
+-   **Review Before Export**: Sorts important findings first, follows Obsidian's interface language, and presents editable AI suggestions in a compact review table.
+-   **Copy-only Fixes**: Applies only the suggestions explicitly marked **Replace**; ignored or untouched findings preserve the original text, and the source note is never changed.
 -   **Daily Note Names**: Removes a valid leading `YYYY-MM-DD ` date from the exported directory and default title.
 -   **Word Replacements**: Applies configurable, ordered text replacement rules during export.
 -   **Conflict-safe Export**: Creates `title1`, `title2`, and so on when an export directory already exists, without overwriting old content.
@@ -32,12 +33,13 @@ Requires Obsidian 1.13.0 or later.
     -   Add any **Word Replacements** you want to apply to exported body text, titles, directory names, and string frontmatter values.
     -   AI review is enabled by default. Configure an OpenAI-compatible **API Base URL** and **Model**, plus an API key from Obsidian **SecretStorage** when the service requires one. Use **Test Connection** to verify the configuration without sending a note.
     -   The plugin uses the OpenAI Chat Completions request format. Official OpenAI endpoints use JSON Schema when available; DeepSeek, compatible gateways, Ollama, LM Studio, and similar services automatically use or fall back to simpler JSON response modes.
+    -   Review output follows Obsidian's current interface language. Invalid structured responses are parsed conservatively and retried once before the export reports an error.
     -   To restore direct export, turn off **Enable AI Review** and confirm once. Image metadata cleaning remains active.
     -   **Permalink Configuration**: Additionally, ensure that in your `hugo.toml` file, you change `[permalinks] posts = "/posts/:year/:month/:title/"` to `[permalinks] posts = "/posts/:title/"`.
 3.  **Exporting**:
     -   Open the note you want to export.
     -   Click the "Publish to Hugo" (send icon) button in the left ribbon.
-    -   The plugin prepares the final export copy, cleans image metadata locally, and reviews the final Markdown when AI review is enabled. A review window appears only when an issue or metadata-cleaning failure needs attention.
+    -   The plugin prepares the final export copy, cleans image metadata locally, and reviews the final Markdown when AI review is enabled. When findings exist, select **Replace** for each suggestion you want applied, edit the suggested text if needed, then select **Export**. Findings left untouched or marked **Ignore** preserve the original text.
 
 ## How it Works
 
@@ -71,10 +73,10 @@ Hugo Exporter is a desktop-only plugin because exporting requires access to a Hu
 - When AI review is enabled, it sends the complete final Markdown for the current export to the OpenAI-compatible endpoint configured by the user. It never sends image bytes, image metadata, or the Obsidian source file.
 - API keys are referenced through Obsidian SecretStorage and are not stored in the plugin's `data.json`. A key may be omitted for local services that do not require authentication.
 - It does not collect analytics and does not retain review results, content hashes, article content, or review history. The configured provider's own retention, privacy, and billing policies still apply.
-- Review suggestions and manual edits affect only the export copy. They never modify the source note.
+- Review suggestions marked **Replace** affect only the export copy. Editing a suggestion does not apply it by itself, and the source note is never modified.
 - Image metadata cleaning runs locally even when AI review is disabled. If cleaning fails, the original image is retained only after a prominent warning and explicit confirmation.
 - Existing export directories are never overwritten or deleted. If a directory already exists, a numbered directory is created instead. A new directory created by a failed export is removed automatically.
 
 ## Release provenance
 
-Official release assets are built by GitHub Actions from the tagged source and include GitHub artifact attestations. This allows users to verify that `main.js` and `manifest.json` came from this repository's release workflow. A `styles.css` asset is only needed if the plugin adds custom styles in a future release.
+Official release assets are built by GitHub Actions from the tagged source and include GitHub artifact attestations. This allows users to verify that `main.js`, `manifest.json`, and `styles.css` came from this repository's release workflow.
