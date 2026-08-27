@@ -1,13 +1,19 @@
 # Changelog
 
-## 1.3.0 - 2026-08-26
+## 1.3.0 - 2026-08-27
 
 ### Features
 
-- Review the complete final Markdown with a configurable OpenAI-compatible endpoint before publishing.
+- Review the complete final Markdown for sensitive topics, personally identifiable information, and location data with a configurable OpenAI-compatible endpoint before publishing.
 - Automatically adapt structured output for OpenAI, DeepSeek, compatible gateways, and local model services.
-- Let users select and edit individual AI suggestions while requiring fixes for credential and identity/financial risks.
+- Follow Obsidian's interface language for AI-generated titles, reasons, and replacement suggestions.
+- Present important findings first in a responsive table with editable replacements and explicit **Replace** or **Ignore** actions.
 - Strip privacy metadata from referenced images locally while preserving orientation and color profiles.
+
+### Fixes
+
+- Accept JSON wrapped in code fences or explanatory text and retry one genuinely invalid AI response.
+- Preserve original text unless the user explicitly selects **Replace** for that finding.
 
 ### Safety
 
@@ -19,6 +25,7 @@
 
 - Split the export workflow, AI client, review fixes, review UI, and metadata cleaner into independently testable modules.
 - Keep AI review globally enabled by default and retain local metadata cleaning when review is disabled.
+- Move word-replacement controls above AI settings and consolidate their layout into one maintainable settings group.
 
 ## 1.2.3 - 2026-08-26
 
