@@ -145,7 +145,7 @@ export async function writeExportBundle(
 
 	try {
 		for (const asset of temporaryAssets) {
-			await operations.writeFile(asset.temporaryPath, Buffer.from(asset.data));
+			await operations.writeFile(asset.temporaryPath, new Uint8Array(asset.data));
 		}
 		await operations.writeFile(temporaryIndexPath, markdown);
 

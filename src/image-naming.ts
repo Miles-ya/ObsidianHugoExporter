@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 export function createImageHash(data: ArrayBuffer): string {
-	return createHash('sha256').update(Buffer.from(data)).digest('hex');
+	return createHash('sha256').update(new Uint8Array(data)).digest('hex');
 }
 
 export function allocateImageName(

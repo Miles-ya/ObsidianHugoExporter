@@ -2,14 +2,15 @@
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
 		"isolatedModules": true,
-		"lib": ["DOM", "ES2018"],
+		"lib": ["DOM", "ES2022"],
 		"module": "ESNext",
 		"moduleResolution": "node",
 		"noEmit": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"target": "ES2018"
+		"target": "ES2018",
+		"types": ["node"]
 	},
 	"include": ["**/*.ts"]
 }
