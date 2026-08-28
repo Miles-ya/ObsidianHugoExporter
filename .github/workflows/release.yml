@@ -43,6 +43,11 @@ jobs:
           cp main.js manifest.json release/
           if [ -f styles.css ]; then cp styles.css release/; fi
 
+      - name: Prepare release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e "const fs=require('fs'); const version=process.env.RELEASE_TAG; const changelog=fs.readFileSync('CHANGELOG.md','utf8'); const marker='## '+version+' - '; const start=changelog.indexOf(marker); if(start<0) throw new Error('Missing changelog section for '+version); const next=changelog.indexOf('\n## ',start+marker.length); fs.writeFileSync('release-notes.md',changelog.slice(start,next<0?undefined:next).trim()+'\n');"
+
       - name: Attest release assets
         uses: actions/attest-build-provenance@v3
         with:
@@ -52,5 +57,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
-          generate_release_notes: true
+          body_path: release-notes.md
           files: release/*
