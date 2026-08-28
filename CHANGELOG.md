@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 - 2026-08-28
+
+### Fixes
+
+- Explicitly load Node.js and modern ECMAScript types so external source scanners can correctly type-check filesystem, path, and cryptography APIs.
+- Use `Uint8Array` instead of the Node.js `Buffer` global when writing and hashing exported image data.
+
 ## 1.3.0 - 2026-08-27
 
 ### Features
